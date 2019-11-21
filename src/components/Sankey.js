@@ -1,7 +1,7 @@
 import React from 'react';
 import { select } from 'd3-selection';
 import { observer } from 'mobx-react';
-// Should redo this d3 layout (it's kinda bad!)
+// TODO: Should redo this d3 layout (it's kinda bad!)
 import viz from './viz.js';
 
 import './Sankey.css';
