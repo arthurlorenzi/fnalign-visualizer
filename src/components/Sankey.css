@@ -16,6 +16,10 @@
 	stroke:none;
 	fill-opacity:0.5;
 }
-.label {
+.label,
+.score {
 	font-size: 14px;
+}
+.score {
+	font-weight: 600;
 }

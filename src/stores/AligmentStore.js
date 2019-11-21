@@ -10,8 +10,7 @@ class AlignmentStore {
 
 	get data() {
 		const selectedSet = new Set(this.selected.map(x => x.id));
- 
-		return this.raw.filter(x => (selectedSet.has(x[0]) || selectedSet.has(x[1])) && x[2] >= this.threshold);
+		return this.raw.filter(x => (selectedSet.has(x[0]) || selectedSet.has(x[1])) && x[2] >= this.threshold).sort();
 	}
 
 	get frames() {
