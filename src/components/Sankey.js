@@ -25,7 +25,7 @@ const Sankey = observer(
 			
 			const container = select(this.container);
 			container.select("svg").remove();
-			const svg = container.append("svg").attr("width", 960).attr("height", height);
+			const svg = container.append("svg").attr("width", 960).attr("height", height-10);
 			const g = svg.append("g").attr("transform","translate(200,50)");
 			
 			const bp =
