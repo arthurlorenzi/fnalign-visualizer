@@ -1,0 +1,9 @@
+.sidebar-container {
+	width: 450px;
+	padding: 16px;
+	box-shadow: 0 0 2rem 0 rgba(125,125,125,.25);
+}
+
+.multi-select-wrapper {
+	font-size: 12px;
+}
