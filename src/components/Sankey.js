@@ -27,7 +27,15 @@ const colors = function*() {
 const Sankey = observer(
 	class Sankey extends React.Component {
 
-		container = null
+		root = null
+
+		selection = null
+
+		scoreFormatter = format(".3f")
+
+		bP = null
+
+		bPg = null
 
 		componentDidMount() {
 			this.renderSankey();
@@ -35,6 +43,43 @@ const Sankey = observer(
 
 		componentDidUpdate() {
 			this.renderSankey();
+		}
+
+		onBarClick(bar) {
+			if (this.selection && this.selection.key === bar.key) {
+				this.bP.mouseout(this.selection);
+				this.selection = null;
+			} else {
+				if (this.selection) {
+					this.bP.mouseout(this.selection);
+				}
+				this.selection = bar;
+				this.bP.mouseover(bar);
+			}
+		}
+
+		onEdgeClick(edge) {
+			const {store} = this.props;
+
+			store.selectedAlignment[0] = edge.primary;
+			store.selectedAlignment[1] = edge.secondary;
+		}
+
+		select(bar) {
+			const filterFn =
+				bar.part === "primary"
+					? (d => bar.key === d.primary)
+					: (d => bar.key === d.secondary);
+
+			this.bP.mouseover(bar);
+			this.bPg.selectAll(".score")
+				.filter(filterFn)
+				.text(d => this.scoreFormatter(d.value))
+		}
+
+		unselect(bar) {
+			this.bP.mouseout(bar);
+			this.bPg.selectAll(".score").text("");
 		}
 
 		renderSankey() {
@@ -46,15 +91,14 @@ const Sankey = observer(
 						res[current] = colorGen.next().value;
 						return res;
 					}, {});
-			const scoreFormatter = format(".3f");
 			const height = window.innerHeight;
-			const container = select(this.container);
+			const root = select(this.root);
 
-			container.select("svg").remove();
-			const svg = container.append("svg").attr("width", 960).attr("height", height-10);
+			root.select("svg").remove();
+			const svg = root.append("svg").attr("width", 960).attr("height", height-10);
 			const g = svg.append("g").attr("transform","translate(200,50)");
 			
-			const bP =
+			this.bP =
 				viz.bP()
 					.data(store.data)
 					.min(12)
@@ -63,38 +107,28 @@ const Sankey = observer(
 					.width(500)
 					.fill(d => colorMap[d.primary])
 			
-			const bPg = g.call(bP);
+			this.bPg = g.call(this.bP);
 
-			bPg.selectAll(".mainBars")
-				.on("mouseover", sel => {
-					const filterFn =
-						sel.part === "primary"
-							? (d => sel.key === d.primary)
-							: (d => sel.key === d.secondary);
+			this.bPg.selectAll(".mainBars")
+				.on("click", d => this.onBarClick(d));
+			
+			this.bPg.selectAll(".edges")
+				.on("click", d => this.onEdgeClick(d));
 
-					bP.mouseover(sel);
-					bPg.selectAll(".score")
-						.filter(filterFn)
-						.text(d => scoreFormatter(d.value))
-				})
-				.on("mouseout", sel => {
-					bP.mouseout(sel);
-					bPg.selectAll(".score").text("")
-				});
-
-			bPg
-				.selectAll(".subBars")
+			this.bPg.selectAll(".subBars")
 				.filter(d => d.part === "secondary")
 				.append("text")
 					.attr("class", "score")
 					.attr("x", -58)
 					.attr("y", 6)
 			
-			g.selectAll(".mainBars").append("text").attr("class","label")
-				.attr("x", d => (d.part === "primary" ? -30 : 30))
-				.attr("y", () => 6)
-				.text(d => d.key)
-				.attr("text-anchor", d => (d.part === "primary" ? "end": "start"));
+			this.bPg.selectAll(".mainBars")
+				.append("text")
+					.attr("class","label")
+					.attr("x", d => (d.part === "primary" ? -30 : 30))
+					.attr("y", () => 6)
+					.text(d => d.key)
+					.attr("text-anchor", d => (d.part === "primary" ? "end": "start"));
 		}
 
 		render() {
@@ -103,7 +137,7 @@ const Sankey = observer(
 			if (data.length === 0 ) {
 				return <h3 className="no-data-text">No data to show.</h3>
 			} else {
-				return (<div ref={node => this.container = node}></div>);
+				return (<div ref={node => this.root = node}></div>);
 			}
 		}
 	}

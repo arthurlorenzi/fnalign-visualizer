@@ -2,6 +2,10 @@
 	margin-top: 60px;
 }
 
+.mainBars {
+	cursor: pointer;
+}
+
 .mainBars rect{
 	shape-rendering: auto;
 	fill-opacity: 0;
@@ -9,17 +13,22 @@
 	stroke: rgb(0, 0, 0);
 	stroke-opacity: 0;
 }
+
 .subBars{
 	shape-rendering:crispEdges;
 }
+
 .edges{
 	stroke:none;
 	fill-opacity:0.5;
+	cursor: pointer;
 }
+
 .label,
 .score {
 	font-size: 14px;
 }
+
 .score {
 	font-weight: 600;
 }

@@ -18,11 +18,12 @@ export default observer(props => {
 			<h2>Frames</h2>
 			<MultiSelect
 				items={store.frames}
-				onChange={selected => store.selected = selected}
-				// showSelectAll={false}
+				onChange={selected => store.sankeyFrames = selected}
 				itemHeight={30}
 				wrapperClassName="multi-select-wrapper"
 			/>
+			<p>{store.selectedAlignment[0]}</p>
+			<p>{store.selectedAlignment[1]}</p>
 		</div>
 	);
 })

@@ -44,8 +44,8 @@ viz.bP = function(){
 				.append("rect")
 				.attr("x",fx).attr("y",fy).attr("width",fw).attr("height",fh)
 		.style("fill-opacity",0)
-		.on("mouseover",bP.mouseover)
-		.on("mouseout",bP.mouseout);			
+		// .on("mouseover",bP.mouseover)
+		// .on("mouseout",bP.mouseout);
 	});
 	}
 	bP.data = function(_){
@@ -282,12 +282,14 @@ viz.bP = function(){
 			g.selectAll(".edges").data(b1.edges).transition().duration(dur)
 				.attr("d",function(d){ return d.path; })
 		.style("fill-opacity",bP.edgeOpacity())
+		.style("visibility", "visible")
 					
 			g.selectAll(".mainBars").data(b1.mainBars).transition().duration(dur)
 		.attr("transform", function(d){ return "translate("+d.x+","+d.y+")";})
 				.select("rect")
 				.attr("x",fx).attr("y",fy).attr("width",fw).attr("height",fh)
-		.style("fill-opacity",0)
+		// .style("fill-opacity",0)
+		.style("visibility", "hidden")
 	}
 	bP.mouseover = function(d){
 		var newbars = bP.bars(d);
@@ -305,11 +307,14 @@ viz.bP = function(){
 		e.filter(function(t){ return t[d.part] === d.key;})
 		.transition().duration(bP.duration())
 		.style("fill-opacity",bP.edgeOpacity())
+		.style("visibility", "visible")
+
 		.attr("d",function(d){ return d.path});	
 		
 		e.filter(function(t){ return t[d.part] !== d.key;})
 		.transition().duration(bP.duration())
-		.style("fill-opacity",0)
+		// .style("fill-opacity",0)
+		.style("visibility", "hidden")
 		.attr("d",function(d){ return d.path});	
 		
 		g.selectAll(".mainBars").data(newbars.mainBars)
@@ -331,6 +336,7 @@ viz.bP = function(){
 		g.selectAll(".edges").data(newbars.edges)
 		.transition().duration(bP.duration())
 		.style("fill-opacity",bP.edgeOpacity())
+		.style("visibility", "visible")
 		.attr("d",function(d){ return d.path});	
 		
 		g.selectAll(".mainBars").data(newbars.mainBars)
