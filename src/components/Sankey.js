@@ -47,14 +47,14 @@ const Sankey = observer(
 
 		onBarClick(bar) {
 			if (this.selection && this.selection.key === bar.key) {
-				this.bP.mouseout(this.selection);
+				this.unselect(this.selection);
 				this.selection = null;
 			} else {
 				if (this.selection) {
-					this.bP.mouseout(this.selection);
+					this.unselect(this.selection);
 				}
 				this.selection = bar;
-				this.bP.mouseover(bar);
+				this.select(bar);
 			}
 		}
 
