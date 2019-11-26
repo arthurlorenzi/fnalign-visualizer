@@ -1,38 +1,67 @@
-import { computed, decorate, observable } from 'mobx';
+import { action, computed, decorate, observable } from 'mobx';
 
 class AlignmentStore {
 
-	raw = []
+	alignments = []
+
+	indices = []
+
+	alignmentIndex = 0
 
 	sankeyFrames = []
 
-	selectedAlignment = [null, null]
+	selectedEdge = [null, null]
 
 	threshold = 0.1
 
 	get data() {
-		const frameSet = new Set(this.sankeyFrames.map(x => x.id));
-		return this.raw.filter(x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold).sort();
+		const alignment = this.alignments[this.alignmentIndex]
+
+		if (alignment) {
+			const {edges} = alignment;
+			const frameSet = new Set(this.sankeyFrames.map(x => x.id));
+
+			return edges.filter(x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold);
+		} else {
+			return [];
+		}
 	}
 
 	get frames() {
-		return [
-			...new Set(
-				this.raw.map(x => x[0])
-					.concat(this.raw.map(x => x[1]))
-			)
-		].sort().map(x => ({
-			id: x,
-			label: x, 
-		}));
+		return this.indices
+			.flat()
+			.sort()
+			.map(x => ({
+				id: x,
+				label: x
+			}));
 	}
+
+	load = action(data => {
+		this.indices = data.indices;
+
+		this.alignments = data.alignments.map(a => {
+			const edges = [];
+
+			a.data.forEach((row, i) => {
+				row.forEach((value, j) => {
+					if (value > 0)
+						edges.push([this.indices[0][i], this.indices[1][j], value])
+				});
+			});
+
+			return { type: a.type, edges: edges }
+		});
+	})
 
 }
 
 decorate(AlignmentStore, {
-	raw: observable,
+	alignments: observable,
+	alignmentIndex: observable,
+	indices: observable,
 	sankeyFrames: observable,
-	selectedAlignment: observable,
+	selectedEdge: observable,
 	threshold: observable,
 	data: computed,
 	frames: computed,

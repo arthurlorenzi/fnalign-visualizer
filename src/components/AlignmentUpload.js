@@ -1,6 +1,16 @@
 import React from 'react';
 
+import './AlignmentUpload.css';
+
 class AlignmentUpload extends React.Component {
+
+	constructor(props) {
+		super(props);
+		this.state = {
+			error: false,
+		}
+	}
+
 	onFileChange = event => {
 		const file = event.target.files[0];
 
@@ -8,16 +18,32 @@ class AlignmentUpload extends React.Component {
 			const reader = new FileReader();
 
 			reader.addEventListener('load', e => {
-				// TODO: show error messsage in case something bad happens
-				this.props.store.raw = JSON.parse(e.target.result);
+				let error = false;
+				const {store} = this.props;
+				try {
+					store.load(JSON.parse(e.target.result));
+				} catch (exception) {
+					error = true;
+				}
+				this.setState({ error })
 			});
 
 			reader.readAsBinaryString(file);
 		}
 	}
 
+	renderError() {
+		const {error} = this.state;
+		return error ? <p className="upload-error">Erro ao ler o arquivo.</p> : null;
+	}
+
 	render() {
-		return (<input type="file" onChange={this.onFileChange} />)
+		return (
+			<div>
+				<input type="file" onChange={this.onFileChange} />
+				{this.renderError()}
+			</div>
+		);
 	}
 }
 

@@ -22,8 +22,8 @@ export default observer(props => {
 				itemHeight={30}
 				wrapperClassName="multi-select-wrapper"
 			/>
-			<p>{store.selectedAlignment[0]}</p>
-			<p>{store.selectedAlignment[1]}</p>
+			<p>{store.selectedEdge[0]}</p>
+			<p>{store.selectedEdge[1]}</p>
 		</div>
 	);
 })
