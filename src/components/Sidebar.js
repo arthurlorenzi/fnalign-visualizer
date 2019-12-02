@@ -22,8 +22,6 @@ export default observer(props => {
 				itemHeight={30}
 				wrapperClassName="multi-select-wrapper"
 			/>
-			<p>{store.selectedEdge[0]}</p>
-			<p>{store.selectedEdge[1]}</p>
 		</div>
 	);
 })

@@ -13,7 +13,7 @@ function App() {
 	return (
 		<div className="App">
 			<Sidebar store={store} />
-			<div className="App-body">
+			<div className="app-body">
 				<ChartPanel store={store} />
 			</div>
 		</div>

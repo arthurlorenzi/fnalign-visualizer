@@ -1,0 +1,27 @@
+#chart-panel-container {
+	display: flex;
+	flex-wrap: nowrap;
+	overflow: hidden;
+	position: relative;
+}
+
+#back-button-container {
+	position: absolute;
+	top: 60px;
+	left: 30px;
+	cursor: pointer;
+	z-index: 10;
+}
+
+.shift > div:not(#back-button-container),
+.no-shift > div:not(#back-button-container) {
+	transition: transform 400ms ease-in-out;
+	
+}
+.shift > div:not(#back-button-container) {
+	transform: translateX(-100%);
+}
+.no-shift > div:not(#back-button-container) {
+	transform: translateX(0%);
+}
+

@@ -20,11 +20,13 @@ const SynsetGraph = observer(
 		scoreFormatter = format(".3f")
 
 		componentDidMount() {
-			this.renderGraph();
+			if (this.props.store.selectedEdge[0] && this.props.store.selectedEdge[1])
+				this.renderGraph();
 		}
 
 		componentDidUpdate() {
-			this.renderGraph();
+			if (this.props.store.selectedEdge[0] && this.props.store.selectedEdge[1])
+				this.renderGraph();
 		}
 
 		getRenderingData(height, width, margin) {
@@ -171,12 +173,12 @@ const SynsetGraph = observer(
 		}
 
 		renderGraph() {
-			const height = window.innerHeight - 2;
+			const height = window.innerHeight-10;
 			const width = 960;
 			const margin = 60;
 
 			const data = this.getRenderingData(height, width, margin);
-			const svg = select(this.root);
+			const svg = select(this.root).select("svg");
 
 			svg
 				.attr("height", height)
@@ -227,28 +229,31 @@ const SynsetGraph = observer(
 
 		render() {
 			const {store} = this.props;
-			console.log(store.selectedEdge);
-			console.log(store.LUsByFrame);
 
 			return (
-				<div id="synset-graph-container">
+				<div id="synset-graph-container" ref={node => this.root = node}>
 					<div id="synset-tooltip">
-						<div class="synset-lang-title">eng:</div>
+						<div className="synset-lang-title">eng:</div>
 						<div id="synset-eng-lemmas"></div>
-						<div class="synset-lang-title" id="synset-l2-title" />
+						<div className="synset-lang-title" id="synset-l2-title" />
 						<div id="synset-l2-lemmas"></div>
 					</div>
-					<svg ref={node => this.root = node}>
-						<defs>
-							<marker id="arrowhead" markerWidth="10" markerHeight="7" 
-								refX="0" refY="3.5" orient="auto">
-								<polygon points="0 0, 10 3.5, 0 7" fill="#555" />
-							</marker>
-						</defs>
-						<g id="nodes" />
-						<g id="links" />
-						<text id="stats" />
-					</svg>
+					{
+						(store.selectedEdge[0] && store.selectedEdge[1])
+						?
+							<svg>
+								<defs>
+									<marker id="arrowhead" markerWidth="10" markerHeight="7" 
+										refX="0" refY="3.5" orient="auto">
+										<polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+									</marker>
+								</defs>
+								<g id="nodes" />
+								<g id="links" />
+								<text id="stats" />
+							</svg>
+						: <h3 className="no-data-text">No data to show.</h3>
+					}
 				</div>
 			);
 		}

@@ -3,8 +3,9 @@
 	min-height: 100vh;
 }
 
-.App-body {
+.app-body {
 	display: flex;
 	flex-grow: 1;
 	justify-content: center;
+	overflow: hidden;
 }

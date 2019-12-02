@@ -1,7 +1,6 @@
 #synset-graph-container {
-	position: relative;
-	color: #555;
-	font-size: 14px;
+	min-width: calc(100vw - 450px);
+	text-align: center;
 }
 
 #frm1 {
@@ -36,6 +35,9 @@ tspan.synset-matches {
 	border: 1px #666 solid;
 	box-shadow: 0 0 0.5rem 0 rgba(125,125,125,.25);
 	display: none;
+	font-size: 14px;
+	text-align: start;
+	color: #555;
 }
 
 #synset-l2-title {

@@ -20,8 +20,9 @@ class AlignmentStore {
 
 	sankeyFrames = []
 
-	// selectedEdge = [null, null]
-	selectedEdge = ['Activity_finish', 'Activity_finish.spa']
+	showDetails = false
+
+	selectedEdge = [null, null]
 
 	threshold = 0.1
 
@@ -135,6 +136,7 @@ decorate(AlignmentStore, {
 	lemmasBySynset: observable,
 	alignmentIndex: observable,
 	sankeyFrames: observable,
+	showDetails: observable,
 	selectedEdge: observable,
 	threshold: observable,
 	data: computed,

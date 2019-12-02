@@ -38,11 +38,13 @@ const Sankey = observer(
 		bPg = null
 
 		componentDidMount() {
-			this.renderSankey();
+			if (this.props.store.data.length > 0)
+				this.renderSankey();
 		}
 
 		componentDidUpdate() {
-			this.renderSankey();
+			if (this.props.store.data.length > 0)
+				this.renderSankey();
 		}
 
 		onBarClick(bar) {
@@ -63,6 +65,7 @@ const Sankey = observer(
 
 			store.selectedEdge[0] = edge.primary;
 			store.selectedEdge[1] = edge.secondary;
+			store.showDetails = true;
 		}
 
 		select(bar) {
@@ -91,11 +94,12 @@ const Sankey = observer(
 						res[current] = colorGen.next().value;
 						return res;
 					}, {});
-			const height = window.innerHeight;
+			const height = window.innerHeight-10;
+			const width = 960;
 			const root = select(this.root);
 
 			root.select("svg").remove();
-			const svg = root.append("svg").attr("width", 960).attr("height", height-10);
+			const svg = root.append("svg").attr("width", width).attr("height", height);
 			const g = svg.append("g").attr("transform","translate(200,50)");
 			
 			this.bP =
@@ -115,7 +119,7 @@ const Sankey = observer(
 			this.bPg.selectAll(".edges")
 				.on("click", d => this.onEdgeClick(d));
 
-			this.bPg.selectAll(".subBars")
+				this.bPg.selectAll(".subBars")
 				.filter(d => d.part === "secondary")
 				.append("text")
 					.attr("class", "score")
@@ -134,11 +138,15 @@ const Sankey = observer(
 		render() {
 			const data = this.props.store.data;
 
-			if (data.length === 0 ) {
-				return <h3 className="no-data-text">No data to show.</h3>
-			} else {
-				return (<div ref={node => this.root = node}></div>);
-			}
+			return (
+				<div id="sankey-container" ref={node => this.root = node}>
+					{
+						data.length === 0
+						? <h3 className="no-data-text">No data to show.</h3>
+						: null
+					}
+				</div>
+			)
 		}
 	}
 );
