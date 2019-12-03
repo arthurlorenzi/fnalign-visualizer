@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/fnalign-visualizer/precache-manifest.40b261e16421e73e11e83bc69ddd29ef.js"
+  "/fnalign-visualizer/precache-manifest.3283340d89a41b0e9270245a8675c432.js"
 );
 
 self.addEventListener('message', (event) => {
