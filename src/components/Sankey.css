@@ -1,8 +1,3 @@
-#sankey-container {
-	min-width: calc(100vw - 450px);
-	text-align: center;
-}
-
 .no-data-text {
 	margin-top: 60px;
 }

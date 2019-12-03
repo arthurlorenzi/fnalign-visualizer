@@ -139,7 +139,7 @@ const Sankey = observer(
 			const data = this.props.store.data;
 
 			return (
-				<div id="sankey-container" ref={node => this.root = node}>
+				<div ref={node => this.root = node}>
 					{
 						data.length === 0
 						? <h3 className="no-data-text">No data to show.</h3>

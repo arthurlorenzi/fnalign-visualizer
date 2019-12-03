@@ -1,34 +1,29 @@
-#synset-graph-container {
-	min-width: calc(100vw - 450px);
-	text-align: center;
-}
-
-#frm1 {
-	text-anchor: middle;
-}
-
-#frm2 {
-	text-anchor: middle;
+#synset-graph-content {
+	position: relative;
 }
 
 .synset-node {
 	fill: #555;
 }
-
 .synset-node.match,
 tspan.synset-matches {
 	font-weight: bold!important;
-	fill: green;
+	fill: #109618;
+}
+.synset-node.ref,
+tspan.synset-references {
+	fill: #FF9900;
 }
 
+.synset-graph-info {
+	font-size: 16px;
+}
 .synset-graph-score {
 	text-anchor: end;
-	font-size: 18px;
-	fill: #666;
 }
 #synset-tooltip {
 	position: absolute;
-	width: 200px;
+	width: 250px;
 	padding: 10px 8px;
 	background-color: rgba(255, 255, 255, 0.98);
 	border-radius: 4px;
@@ -47,6 +42,9 @@ tspan.synset-matches {
 .synset-lang-title {
 	font-weight: bold;
 	margin-bottom: 4px;
+}
+.synset-lang-title.large {
+	font-size: 18px;
 }
 
 .synset-lemma {

@@ -1,8 +1,8 @@
 import React from 'react';
 import {observer} from 'mobx-react';
-import { format } from 'd3-format';
-import { select } from 'd3-selection';
-import { scalePoint } from 'd3-scale';
+import {format} from 'd3-format';
+import {select} from 'd3-selection';
+import {scalePoint} from 'd3-scale';
 
 import './SynsetGraph.css';
 
@@ -11,9 +11,17 @@ const SynsetGraph = observer(
 
 		root = null
 
+		tooltip = null
+
 		links = null
 
 		nodes = null
+
+		height = null
+		
+		width = null
+
+		margin = null
 
 		posRegex = /\.\w{1,3}$/gi
 
@@ -29,14 +37,14 @@ const SynsetGraph = observer(
 				this.renderGraph();
 		}
 
-		getRenderingData(height, width, margin) {
+		getRenderingData() {
 			const {store} = this.props;
 			const data = store.selectionGraph;
 			
 			const x =
 				scalePoint()
 					.domain(['frm1LU', 'synset', 'frm2LU'])
-					.range([0, width])
+					.range([0, this.width])
 					.padding(.3)
 
 			const yLU1 = scalePoint()
@@ -44,21 +52,21 @@ const SynsetGraph = observer(
 					.filter(d => d.type === 'frm1LU')
 					.sort((a, b) => b.outDegree - a.outDegree)
 					.map(d => d.name))
-				.range([margin*2, height-(margin*2)]);
+				.range([this.margin*2, this.height-(this.margin*2)]);
 
 			const yLU2 = scalePoint()
 				.domain(data.nodes
 						.filter(d => d.type === 'frm2LU')
 						.sort((a,b) => b.outDegree - a.outDegree)
 						.map(d => d.name))
-				.range([margin*2, height-(margin*2)]);
+				.range([this.margin*2, this.height-(this.margin*2)]);
 
 			const ySyn = scalePoint()
 				.domain(data.nodes
 					.filter(d => d.type === 'synset')
 					.sort((a, b) => b.inDegree - a.inDegree)
 					.map(d => d.name))
-				.range([margin, height-margin]);
+				.range([this.margin, this.height-this.margin]);
 
 			const frm1LUX = x('frm1LU');
 			const frm2LUX = x('frm2LU');
@@ -102,6 +110,8 @@ const SynsetGraph = observer(
 				}
 			});
 
+			select("#synset-name").html(datum.name);
+
 			select("#synset-eng-lemmas")
 				.html(lemmas["eng"].map(l => this.lemmaHtml(l, highlighted.has(l))).join(", "))
 
@@ -109,10 +119,20 @@ const SynsetGraph = observer(
 			select("#synset-l2-lemmas")
 				.html(lemmas[language].map(l => this.lemmaHtml(l, highlighted.has(l))).join(", "))
 
-			select("#synset-tooltip")
-				.style("top", `${datum.y+datum.height/2}px`)
+			const tooltip = select("#synset-tooltip");
+			tooltip.style("display", "block");
+			const bbox = tooltip.node().getBoundingClientRect();
+			let top = datum.y + datum.height/2;
+
+			if (datum.y + bbox.height > window.innerHeight) {
+				top = datum.y - datum.height - bbox.height;
+			} else {
+				top = datum.y + datum.height/2;
+			}
+
+			tooltip
+				.style("top", `${top}px`)
 				.style("left", `${datum.x+12}px`)
-				.style("display", "block")
 		}
 
 		onMouseOverNode(datum) {
@@ -126,8 +146,7 @@ const SynsetGraph = observer(
 				})
 				.attr("opacity", 1);
 
-			this.nodes
-				.filter(d => linked.has(d))
+			this.nodes.filter(d => linked.has(d))
 				.style("font-weight", "bold")
 				.attr("opacity", 1);
 
@@ -172,17 +191,47 @@ const SynsetGraph = observer(
 			`;
 		}
 
-		renderGraph() {
-			const height = window.innerHeight-10;
-			const width = 960;
-			const margin = 60;
+		includeHtml(data) {
+			const svg = select(this.root).select("svg");
+			const synsets = data.nodes.filter(d => d.type === 'synset');
+			const matching = synsets.filter(d => d.isMatchingNode).length;
+			const reference = synsets.filter(d => d.isReferenceNode && !d.isMatchingNode).length;
 
-			const data = this.getRenderingData(height, width, margin);
+			if (data.nodes.length > 0) {
+				svg.select("#title")
+					.attr("x", this.margin)
+					.attr("y", this.height-this.margin/2)
+					.attr("class", "synset-graph-info")
+					.text(`Frames: ${this.props.store.selectedEdge[0]}, ${this.props.store.selectedEdge[1]}`)
+
+				svg.select("#stats")
+					.attr("x", this.width)
+					.attr("y", this.height-this.margin/2)
+					.attr("class", "synset-graph-info synset-graph-score")
+					.html(`
+						Alignment score:
+						<tspan class="synset-matches">${matching}</tspan>
+						÷
+						(
+						<tspan class="synset-matches">${matching}</tspan>
+						+
+						<tspan class="synset-references">${reference}</tspan>
+						)
+						= ${this.scoreFormatter(matching/(matching + reference))}`)
+			}
+		}
+
+		renderGraph() {
+			this.height = window.innerHeight-10;
+			this.width = 960;
+			this.margin = 60;
+
+			const data = this.getRenderingData();
 			const svg = select(this.root).select("svg");
 
 			svg
-				.attr("height", height)
-				.attr("width", width);
+				.attr("height", this.height)
+				.attr("width", this.width);
 
 			this.nodes = svg.select("#nodes")
 				.selectAll("text")
@@ -196,7 +245,15 @@ const SynsetGraph = observer(
 					})
 					.attr("x", d => d.x)
 					.attr("y", d => d.y)
-					.attr("class", d => d.type === 'synset' && d.isMatchingNode ? "synset-node match " : "synset-node")
+					.attr("class", d => {
+						let name = "synset-node";
+						if (d.isMatchingNode) {
+							name += " match";
+						} else if (d.isReferenceNode) {
+							name += " ref";
+						}
+						return name;
+					})
 					.attr("opacity", 0.75)
 					.on("mouseover", d => this.onMouseOverNode(d))
 					.on("mouseout", d => this.onMouseOutNode(d))
@@ -211,49 +268,40 @@ const SynsetGraph = observer(
 					.attr("fill-opacity", 0)
 					.attr("opacity", 0.1)
 
-			const synsets = data.nodes.filter(d => d.type === 'synset')
-			const matching = synsets.filter(d => d.isMatchingNode)
-
-			if (data.nodes.length > 0) {
-				svg.select("#stats")
-					.attr("x", width)
-					.attr("y", height-margin/2)
-					.attr("class", "synset-graph-score")
-					.html(`
-						Alignment score:
-						<tspan class="synset-matches">${matching.length}</tspan>
-						÷ ${synsets.length}
-						= ${this.scoreFormatter(matching.length/synsets.length)}`)
-			}
+			this.includeHtml(data);
 		}
 
 		render() {
 			const {store} = this.props;
 
 			return (
-				<div id="synset-graph-container" ref={node => this.root = node}>
-					<div id="synset-tooltip">
-						<div className="synset-lang-title">eng:</div>
-						<div id="synset-eng-lemmas"></div>
-						<div className="synset-lang-title" id="synset-l2-title" />
-						<div id="synset-l2-lemmas"></div>
+				<div ref={node => this.root = node}>
+					<div id="synset-graph-content">
+						<div id="synset-tooltip">
+							<div className="synset-lang-title large" id="synset-name"></div>
+							<div className="synset-lang-title">eng:</div>
+							<div id="synset-eng-lemmas"></div>
+							<div className="synset-lang-title" id="synset-l2-title" />
+							<div id="synset-l2-lemmas"></div>
+						</div>
+						{
+							(store.selectedEdge[0] && store.selectedEdge[1])
+							?
+								<svg>
+									<defs>
+										<marker id="arrowhead" markerWidth="10" markerHeight="7" 
+											refX="0" refY="3.5" orient="auto">
+											<polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+										</marker>
+									</defs>
+									<g id="nodes" />
+									<g id="links" />
+									<text id="title" />
+									<text id="stats" />
+								</svg>
+							: <h3 className="no-data-text">No data to show.</h3>
+						}
 					</div>
-					{
-						(store.selectedEdge[0] && store.selectedEdge[1])
-						?
-							<svg>
-								<defs>
-									<marker id="arrowhead" markerWidth="10" markerHeight="7" 
-										refX="0" refY="3.5" orient="auto">
-										<polygon points="0 0, 10 3.5, 0 7" fill="#555" />
-									</marker>
-								</defs>
-								<g id="nodes" />
-								<g id="links" />
-								<text id="stats" />
-							</svg>
-						: <h3 className="no-data-text">No data to show.</h3>
-					}
 				</div>
 			);
 		}

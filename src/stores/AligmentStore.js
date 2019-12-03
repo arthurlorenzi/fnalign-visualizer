@@ -51,6 +51,7 @@ class AlignmentStore {
 
 	get selectionGraph() {
 		const factory = x => ({ name: x, inDegree: 0, outDegree: 0, });
+		const isInverseAlignment = this.alignments[this.alignmentIndex].type === "synset_inv";
 
 		// LUs
 		const nodes = 
@@ -91,9 +92,11 @@ class AlignmentStore {
 		});
 
 		nodes.forEach(n => {
+			n.isReferenceNode = (n.frm2LU && isInverseAlignment) || (n.frm1LU && !isInverseAlignment);
 			if (n.frm1LU && n.frm2LU) {
 				n.isMatchingNode = true;
 			}
+
 			delete n.frm1LU;
 			delete n.frm2LU;
 		});
