@@ -27,7 +27,7 @@ const colors = function*() {
 const Sankey = observer(
 	class Sankey extends React.Component {
 
-		root = null
+		svg = null
 
 		selection = null
 
@@ -38,13 +38,11 @@ const Sankey = observer(
 		bPg = null
 
 		componentDidMount() {
-			if (this.props.store.data.length > 0)
-				this.renderSankey();
+			this.renderSankey();
 		}
 
 		componentDidUpdate() {
-			if (this.props.store.data.length > 0)
-				this.renderSankey();
+			this.renderSankey();
 		}
 
 		onBarClick(bar) {
@@ -65,7 +63,7 @@ const Sankey = observer(
 
 			store.selectedEdge[0] = edge.primary;
 			store.selectedEdge[1] = edge.secondary;
-			store.showDetails = true;
+			this.props.onAlignmentClick();
 		}
 
 		select(bar) {
@@ -96,10 +94,11 @@ const Sankey = observer(
 					}, {});
 			const height = window.innerHeight-10;
 			const width = 960;
-			const root = select(this.root);
+			const svg = select(this.svg);
 
-			root.select("svg").remove();
-			const svg = root.append("svg").attr("width", width).attr("height", height);
+			svg.select("*").remove();
+			svg.attr("width", width).attr("height", height);
+
 			const g = svg.append("g").attr("transform","translate(200,50)");
 			
 			this.bP =
@@ -139,11 +138,11 @@ const Sankey = observer(
 			const data = this.props.store.data;
 
 			return (
-				<div ref={node => this.root = node}>
+				<div>
 					{
-						data.length === 0
-						? <h3 className="no-data-text">No data to show.</h3>
-						: null
+						data.length > 0
+						? <svg ref={node => this.svg = node}></svg>
+						: <h3 className="no-data-text">No data to show.</h3>
 					}
 				</div>
 			)

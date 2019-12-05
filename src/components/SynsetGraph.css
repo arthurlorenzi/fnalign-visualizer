@@ -2,15 +2,15 @@
 	position: relative;
 }
 
-.synset-node {
+.node {
 	fill: #555;
 }
-.synset-node.match,
+.node.match,
 tspan.synset-matches {
 	font-weight: bold!important;
 	fill: #109618;
 }
-.synset-node.ref,
+.node.ref,
 tspan.synset-references {
 	fill: #FF9900;
 }

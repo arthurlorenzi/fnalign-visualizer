@@ -28,18 +28,16 @@ const SynsetGraph = observer(
 		scoreFormatter = format(".3f")
 
 		componentDidMount() {
-			if (this.props.store.selectedEdge[0] && this.props.store.selectedEdge[1])
-				this.renderGraph();
+			this.renderGraph();
 		}
 
 		componentDidUpdate() {
-			if (this.props.store.selectedEdge[0] && this.props.store.selectedEdge[1])
-				this.renderGraph();
+			this.renderGraph();
 		}
 
 		getRenderingData() {
 			const {store} = this.props;
-			const data = store.selectionGraph;
+			const data = store.graphData;
 			
 			const x =
 				scalePoint()
@@ -172,7 +170,7 @@ const SynsetGraph = observer(
 			let x2 = datum.target.x;
 			let y2 = datum.target.y - (datum.target.height/4);
 
-			if (datum.source.type === 'frm1LU') {
+			if (datum.source.type === 'frm1LU' || datum.source.type === 'synset') {
 				x1 += datum.source.width + 8;
 				x2 -= 12;
 				coef = 1;
@@ -195,32 +193,29 @@ const SynsetGraph = observer(
 
 		includeHtml(data) {
 			const svg = select(this.root).select("svg");
-			const synsets = data.nodes.filter(d => d.type === 'synset');
-			const matching = synsets.filter(d => d.isMatchingNode).length;
-			const reference = synsets.filter(d => d.isReferenceNode && !d.isMatchingNode).length;
+			const matching = data.nodes.filter(d => d.isMatchingNode).length;
+			const reference = data.nodes.filter(d => d.isReferenceNode && !d.isMatchingNode).length;
 
-			if (data.nodes.length > 0) {
-				svg.select("#title")
-					.attr("x", this.margin)
-					.attr("y", this.height-this.margin/2)
-					.attr("class", "synset-graph-info")
-					.text(`Frames: ${this.props.store.selectedEdge[0]}, ${this.props.store.selectedEdge[1]}`)
+			svg.select("#title")
+				.attr("x", this.margin)
+				.attr("y", this.height-this.margin/2)
+				.attr("class", "synset-graph-info")
+				.text(`Frames: ${this.props.store.selectedEdge[0]}, ${this.props.store.selectedEdge[1]}`)
 
-				svg.select("#stats")
-					.attr("x", this.width)
-					.attr("y", this.height-this.margin/2)
-					.attr("class", "synset-graph-info synset-graph-score")
-					.html(`
-						Alignment score:
-						<tspan class="synset-matches">${matching}</tspan>
-						÷
-						(
-						<tspan class="synset-matches">${matching}</tspan>
-						+
-						<tspan class="synset-references">${reference}</tspan>
-						)
-						= ${this.scoreFormatter(matching/(matching + reference))}`)
-			}
+			svg.select("#stats")
+				.attr("x", this.width)
+				.attr("y", this.height-this.margin/2)
+				.attr("class", "synset-graph-info synset-graph-score")
+				.html(`
+					Alignment score:
+					<tspan class="synset-matches">${matching}</tspan>
+					÷
+					(
+					<tspan class="synset-matches">${matching}</tspan>
+					+
+					<tspan class="synset-references">${reference}</tspan>
+					)
+					= ${this.scoreFormatter(matching/(matching + reference))}`)
 		}
 
 		renderGraph() {
@@ -248,7 +243,7 @@ const SynsetGraph = observer(
 					.attr("x", d => d.x)
 					.attr("y", d => d.y)
 					.attr("class", d => {
-						let name = "synset-node";
+						let name = "node";
 						if (d.isMatchingNode) {
 							name += " match";
 						} else if (d.isReferenceNode) {
@@ -275,7 +270,6 @@ const SynsetGraph = observer(
 
 		render() {
 			const {store} = this.props;
-			const _ = store.selectionGraph;
 
 			return (
 				<div ref={node => this.root = node}>
@@ -289,7 +283,7 @@ const SynsetGraph = observer(
 							<div id="synset-l2-lemmas"></div>
 						</div>
 						{
-							(store.selectedEdge[0] && store.selectedEdge[1])
+							store.graphData.nodes.length > 0
 							?
 								<svg>
 									<defs>

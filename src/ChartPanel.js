@@ -10,14 +10,14 @@ const ChartPanel = observer(
 	class ChartPanel extends React.Component {
 
 		onBackClick() {
-			this.props.store.showDetails = false;
+			this.props.uiState.showAlignmentDetails = false;
 		}
 
 		render() {
 			const {store, uiState} = this.props;
 			let className = "";
 
-			className += store.showDetails ? "shift" : "no-shift";
+			className += uiState.showAlignmentDetails ? "shift" : "no-shift";
 			if (!uiState.sidebarOpen) className += " expanded";
 		
 			return (
@@ -25,12 +25,15 @@ const ChartPanel = observer(
 					id="chart-panel-container"
 					className={className} >
 					{
-						store.showDetails &&
+						uiState.showAlignmentDetails &&
 						<div id="back-button-container" onClick={() => this.onBackClick()} >
 							<FaArrowLeft size="1.75em" />
 						</div>
 					}
-					<Sankey store={store} />
+					<Sankey
+						store={store}
+						onAlignmentClick={() => uiState.showAlignmentDetails = true}
+					/>
 					<SynsetGraph store={store} />
 				</div>
 			)

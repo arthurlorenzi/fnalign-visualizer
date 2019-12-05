@@ -36,6 +36,7 @@ export default observer(props => {
 				<h2>Frames</h2>
 				<MultiSelect
 					items={store.frames}
+					selectedItems={store.sankeyFrames}
 					onChange={selected => store.sankeyFrames = selected}
 					itemHeight={30}
 					wrapperClassName="multi-select-wrapper"
