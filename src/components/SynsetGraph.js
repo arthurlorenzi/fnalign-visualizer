@@ -275,6 +275,7 @@ const SynsetGraph = observer(
 
 		render() {
 			const {store} = this.props;
+			const _ = store.selectionGraph;
 
 			return (
 				<div ref={node => this.root = node}>

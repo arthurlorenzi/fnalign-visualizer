@@ -1,4 +1,5 @@
 import React from 'react';
+import Select from 'react-select';
 import MultiSelect from "@kenshooui/react-multi-select";
 import { FaBars } from 'react-icons/fa';
 import { observer } from 'mobx-react';
@@ -25,6 +26,11 @@ export default observer(props => {
 			<div style={display} >
 				<h2>Alignment file</h2>
 				<AlignmentUpload store={store} />
+				<h2>Scoring method</h2>
+				<Select
+					options={store.scoringOptions}
+					onChange={o => store.scoring = o.value}
+				/>
 				<h2>Score threshold</h2>
 				<Slider store={store} />
 				<h2>Frames</h2>

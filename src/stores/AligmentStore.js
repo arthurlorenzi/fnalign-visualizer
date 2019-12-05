@@ -16,7 +16,7 @@ class AlignmentStore {
 
 	synsetData = {}
 
-	alignmentIndex = 1
+	scoring = null
 
 	sankeyFrames = []
 
@@ -27,7 +27,7 @@ class AlignmentStore {
 	threshold = 0.1
 
 	get data() {
-		const alignment = this.alignments[this.alignmentIndex]
+		const alignment = this.alignments.find(x => x.type === this.scoring);
 
 		if (alignment) {
 			const {edges} = alignment;
@@ -49,9 +49,16 @@ class AlignmentStore {
 			}));
 	}
 
+	get scoringOptions() {
+		return this.alignments.map(x => ({
+			value: x.type,
+			label: x.desc,
+		}));
+	}
+
 	get selectionGraph() {
 		const factory = x => ({ name: x, inDegree: 0, outDegree: 0, });
-		const isInverseAlignment = this.alignments[this.alignmentIndex].type === "synset_inv";
+		const isInverseAlignment = this.scoring === "synset_inv";
 
 		// LUs
 		const nodes = 
@@ -118,7 +125,7 @@ class AlignmentStore {
 				});
 			});
 
-			return { type: a.type, edges: edges }
+			return { type: a.type, desc: a.desc, edges: edges }
 		});
 
 		this.indices = data.indices;
@@ -137,13 +144,14 @@ decorate(AlignmentStore, {
 	LUsByFrame: observable,
 	synsetsByLU: observable,
 	synsetData: observable,
-	alignmentIndex: observable,
+	scoring: observable,
 	sankeyFrames: observable,
 	showDetails: observable,
 	selectedEdge: observable,
 	threshold: observable,
 	data: computed,
 	frames: computed,
+	scoringOptions: computed,
 	selectionGraph: computed,
 });
 

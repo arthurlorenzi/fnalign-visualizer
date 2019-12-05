@@ -1,6 +1,6 @@
 import React from 'react';
 
-import "@kenshooui/react-multi-select/dist/style.css"
+import "@kenshooui/react-multi-select/dist/style.css";
 import './App.css';
 
 import Sidebar from './components/Sidebar';
