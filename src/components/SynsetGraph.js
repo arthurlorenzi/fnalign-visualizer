@@ -100,7 +100,7 @@ const SynsetGraph = observer(
 
 		onMouseOverSynset(datum) {
 			const {store} = this.props;
-			const lemmas = store.lemmasBySynset[datum.name];
+			const synset = store.synsetData[datum.name];
 			const language = store.language;
 			const highlighted = new Set();
 
@@ -112,12 +112,14 @@ const SynsetGraph = observer(
 
 			select("#synset-name").html(datum.name);
 
+			select("#synset-desc").html(synset.definition);
+
 			select("#synset-eng-lemmas")
-				.html(lemmas["eng"].map(l => this.lemmaHtml(l, highlighted.has(l))).join(", "))
+				.html(synset["eng"].map(l => this.lemmaHtml(l, highlighted.has(l))).join(", "))
 
 			select("#synset-l2-title").html(`${language}:`)
 			select("#synset-l2-lemmas")
-				.html(lemmas[language].map(l => this.lemmaHtml(l, highlighted.has(l))).join(", "))
+				.html(synset[language].map(l => this.lemmaHtml(l, highlighted.has(l))).join(", "))
 
 			const tooltip = select("#synset-tooltip");
 			tooltip.style("display", "block");
@@ -279,6 +281,7 @@ const SynsetGraph = observer(
 					<div id="synset-graph-content">
 						<div id="synset-tooltip">
 							<div className="synset-lang-title large" id="synset-name"></div>
+							<div id="synset-desc"></div>
 							<div className="synset-lang-title">eng:</div>
 							<div id="synset-eng-lemmas"></div>
 							<div className="synset-lang-title" id="synset-l2-title" />

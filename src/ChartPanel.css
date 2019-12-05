@@ -7,16 +7,20 @@
 
 #back-button-container {
 	position: absolute;
-	top: 60px;
+	top: 16px;
 	left: 30px;
 	cursor: pointer;
 	z-index: 10;
 }
 
 #chart-panel-container > div:not(#back-button-container) {
-	min-width: calc(100vw - 450px);
+	min-width: calc(100vw - 550px);
 	display: flex;
 	justify-content: center;
+}
+
+#chart-panel-container.expanded > div:not(#back-button-container) {
+	min-width: calc(100vw - 60px);
 }
 
 .shift > div:not(#back-button-container),

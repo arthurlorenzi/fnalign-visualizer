@@ -14,12 +14,16 @@ const ChartPanel = observer(
 		}
 
 		render() {
-			const {store} = this.props;
+			const {store, uiState} = this.props;
+			let className = "";
+
+			className += store.showDetails ? "shift" : "no-shift";
+			if (!uiState.sidebarOpen) className += " expanded";
 		
 			return (
 				<div
 					id="chart-panel-container"
-					className={store.showDetails ? "shift" : "no-shift"} >
+					className={className} >
 					{
 						store.showDetails &&
 						<div id="back-button-container" onClick={() => this.onBackClick()} >

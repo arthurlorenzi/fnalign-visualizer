@@ -14,9 +14,9 @@ class AlignmentStore {
 
 	synsetsByLU = {}
 
-	lemmasBySynset = {}
+	synsetData = {}
 
-	alignmentIndex = 0
+	alignmentIndex = 1
 
 	sankeyFrames = []
 
@@ -124,7 +124,7 @@ class AlignmentStore {
 		this.indices = data.indices;
 		this.LUsByFrame = data.lus;
 		this.synsetsByLU = data.resources.lu_to_syn;
-		this.lemmasBySynset = data.resources.syn_to_lemma;
+		this.synsetData = data.resources.syn_data;
 	})
 
 }
@@ -136,7 +136,7 @@ decorate(AlignmentStore, {
 	indices: observable,
 	LUsByFrame: observable,
 	synsetsByLU: observable,
-	lemmasBySynset: observable,
+	synsetData: observable,
 	alignmentIndex: observable,
 	sankeyFrames: observable,
 	showDetails: observable,

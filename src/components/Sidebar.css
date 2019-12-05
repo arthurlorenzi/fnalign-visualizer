@@ -1,9 +1,17 @@
 .sidebar-container {
-	min-width: 450px;
 	padding: 16px;
 	box-shadow: 0 0 2rem 0 rgba(125,125,125,.25);
+	transition: all 100ms;
 }
 
 .multi-select-wrapper {
 	font-size: 12px;
+}
+
+.sidebar-icon-container {
+	display: flex;
+	justify-content: flex-end;
+}
+.siderbar-icon-click-wrapper {
+	cursor: pointer;
 }

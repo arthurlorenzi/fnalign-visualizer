@@ -41,7 +41,7 @@ tspan.synset-references {
 
 .synset-lang-title {
 	font-weight: bold;
-	margin-bottom: 4px;
+	margin: 6px 0;
 }
 .synset-lang-title.large {
 	font-size: 18px;
