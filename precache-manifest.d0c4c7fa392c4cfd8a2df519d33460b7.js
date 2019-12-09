@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "69297725500bfdd7d8b786770c8cd6b2",
+    "revision": "59e986cc07e6156ef1843aa0b929050a",
     "url": "/fnalign-visualizer/index.html"
   },
   {
@@ -8,8 +8,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/fnalign-visualizer/static/css/2.b31b2e03.chunk.css"
   },
   {
-    "revision": "98d3767eeb9b2201c582",
-    "url": "/fnalign-visualizer/static/css/main.fdac5f59.chunk.css"
+    "revision": "1ea03b04033620acb9ca",
+    "url": "/fnalign-visualizer/static/css/main.30fe3e2e.chunk.css"
   },
   {
     "revision": "ac043c5b04d1ab4bd053",
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/fnalign-visualizer/static/js/2.01aa89da.chunk.js.LICENSE"
   },
   {
-    "revision": "98d3767eeb9b2201c582",
-    "url": "/fnalign-visualizer/static/js/main.4f1f51d1.chunk.js"
+    "revision": "1ea03b04033620acb9ca",
+    "url": "/fnalign-visualizer/static/js/main.eaacf702.chunk.js"
   },
   {
     "revision": "eb21013daa0f686c94b0",
