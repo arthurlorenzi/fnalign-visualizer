@@ -58,7 +58,3 @@
 	background: #3F51B5;
 	cursor: pointer;
 }
-
-.multi-select-wrapper > div {
-	min-width: 250px;
-}

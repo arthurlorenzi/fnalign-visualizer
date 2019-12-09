@@ -7,6 +7,9 @@
 .multi-select-wrapper {
 	font-size: 12px;
 }
+.multi-select-wrapper > div {
+	min-width: 210px;
+}
 
 .sidebar-icon-container {
 	display: flex;
