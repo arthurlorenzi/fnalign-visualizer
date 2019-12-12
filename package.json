@@ -2,7 +2,7 @@
   "name": "fnalign-visualizer",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://arthurlorenzi.github.io/fnalign-visualizer/",
+  "homepage": "https://arthurlorenzi.github.io/mlfn-alignment-visualizer/",
   "dependencies": {
     "@kenshooui/react-multi-select": "^1.1.5",
     "d3": "^4.13.0",
