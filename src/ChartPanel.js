@@ -3,6 +3,7 @@ import {observer} from 'mobx-react';
 import {FaArrowLeft} from 'react-icons/fa';
 import Sankey from './components/Sankey';
 import SynsetGraph from './components/SynsetGraph';
+import TranslationGraph from './components/TranslationGraph';
 
 import './ChartPanel.css';
 
@@ -34,7 +35,11 @@ const ChartPanel = observer(
 						store={store}
 						onAlignmentClick={() => uiState.showAlignmentDetails = true}
 					/>
-					<SynsetGraph store={store} />
+					{
+						store.scoring === 'lu_muse'
+							? <TranslationGraph store={store} />
+							: <SynsetGraph store={store} />
+					}
 				</div>
 			)
 		}

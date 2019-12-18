@@ -24,6 +24,10 @@ class AlignmentStore {
 
 	threshold = 0.1
 
+	vectorsByLU = []
+
+	vectorsId2Word = []
+
 	get data() {
 		const alignment = this.alignments.find(x => x.type === this.scoring);
 
@@ -55,31 +59,36 @@ class AlignmentStore {
 	}
 
 	get graphData() {
-		return this.scoring === 'lu_wordnet'
-			? this.LUWordNetGraph()
-			: this.synsetGraph();
+		switch(this.scoring) {
+			case 'lu_wordnet':
+				return this.LUWordNetGraph();
+			case 'synset':
+			case 'synset_inv':
+				return this.synsetGraph();
+			case 'lu_muse':
+				return this.LUMuseGraph();
+			default:
+				return { nodes: [], links: [] };
+		}
 	}
 
 	LUWordNetGraph() {
 		const nodes = this.getLUNodes();
-		const objs = this.getSynsetObjects(nodes);
-		const links = objs.links.filter(l => l.target.frm1LU);
+		const inter = this.getConnectionObjects(nodes, this.synsetsByLU);
+		const links = inter.links.filter(l => l.target.frm1LU);
 
-		nodes.push(...objs.nodes.filter(n => n.frm1LU));
-		links.forEach(l => {
-			let swap;
-			if (l.source.type === 'frm2LU') {
-				swap = l.source;
-				l.source = l.target;
-				l.target = swap;
-			}
+		nodes.push(...inter.nodes.filter(n => n.frm1LU));
+		links.filter(l => l.source.type === 'frm2LU').forEach(l => {
+			let swap = l.source;
+			l.source = l.target;
+			l.target = swap;
 		})
 		nodes.forEach(n => n.isReferenceNode = n.type === 'frm1LU');
-		links.forEach(l => {
-			if (l.source.type === 'frm1LU' && l.target.isIntersection) {
+		links
+			.filter(l => (l.source.type === 'frm1LU' && l.target.isIntersection))
+			.forEach(l => {
 				l.source.isMatchingNode = true;
-			}
-		});
+			});
 		this.computeDegrees(links);
 
 		return { nodes, links };
@@ -87,10 +96,10 @@ class AlignmentStore {
 
 	synsetGraph() {
 		const nodes = this.getLUNodes();
-		const objs = this.getSynsetObjects(nodes);
-		const links = objs.links;
+		const inter = this.getConnectionObjects(nodes, this.synsetsByLU);
+		const links = inter.links;
 
-		nodes.push(...objs.nodes);
+		nodes.push(...inter.nodes);
 		const isReferenceFn =
 			this.scoring === 'synset'
 				? n => n.frm1LU
@@ -99,6 +108,28 @@ class AlignmentStore {
 			n.isReferenceNode = isReferenceFn(n);
 			n.isMatchingNode = n.isIntersection;
 		})
+		this.computeDegrees(links);
+
+		return { nodes, links };
+	}
+
+	LUMuseGraph() {
+		const nodes = this.getLUNodes();
+		const inter = this.getConnectionObjects(nodes, this.vectorsByLU, x => this.vectorsId2Word[x]);
+		const links = inter.links.filter(l => l.target.frm1LU);
+
+		nodes.push(...inter.nodes.filter(n => n.frm1LU));
+		links.filter(l => l.source.type === 'frm2LU').forEach(l => {
+			let swap = l.source;
+			l.source = l.target;
+			l.target = swap;
+		})
+		nodes.forEach(n => n.isReferenceNode = n.type === 'frm1LU');
+		links
+			.filter(l => (l.source.type === 'frm1LU' && l.target.isIntersection))
+			.forEach(l => {
+				l.source.isMatchingNode = true;
+			});
 		this.computeDegrees(links);
 
 		return { nodes, links };
@@ -114,28 +145,30 @@ class AlignmentStore {
 		);
 	}
 
-	getSynsetObjects(LUNodes) {
-		// LU -> Synset links
+	getConnectionObjects(LUNodes, relationMap, nameFn=x=>x) {
 		const links = LUNodes
-			.map(n =>
-				(this.synsetsByLU[n.name] || [])
-					.map(synset => ({
-						source: n,
-						target: synset,
+			.map(s =>
+				(relationMap[s.name] || [])
+					.map(t => ({
+						source: s,
+						target: t,
 					}))
 			)
 			.flat();
-		// Synset nodes
-		const synsetMap = {}
+		// Creating node objects for intermediate Nodes
+		const intermediateMap = {}
 		const nodes = [...new Set(links.map(l => l.target))]
-				.map(s => {
-					const synset = { type: 'synset', ...this.createNode(s) };
-					synsetMap[s] = synset;
-					return synset;
+				.map(t => {
+					const node = {
+						type: 'intermediate',
+						...this.createNode(nameFn(t))
+					};
+					intermediateMap[t] = node;
+					return node;
 				});
 		// Including references to objects in links
 		links.forEach(l => {
-			l.target = synsetMap[l.target];
+			l.target = intermediateMap[l.target];
 			l.target[l.source.type] = true;
 		});
 		nodes.forEach(n => n.isIntersection = n.frm1LU && n.frm2LU);
@@ -148,55 +181,6 @@ class AlignmentStore {
 			++l.source.outDegree;
 			++l.target.inDegree;
 		});
-	}
-
-	get selectionGraph() {
-		const factory = x => ({ name: x, inDegree: 0, outDegree: 0, });
-
-		// LU nodes
-		const nodes = 
-			(this.LUsByFrame[this.selectedEdge[0]] || []).map(x => ({ type: 'frm1LU', ...factory(x) }))
-			.concat(
-			(this.LUsByFrame[this.selectedEdge[1]] || []).map(x => ({ type: 'frm2LU', ...factory(x) })));
-		// LU/synset links
-		let links = nodes
-			.map(n =>
-				(this.synsetsByLU[n.name] || [])
-					.map(synset => ({
-						source: n,
-						target: synset,
-					}))
-			)
-			.flat();
-		// Synset nodes
-		const synsetMap = {}
-		nodes.push(
-			...[...new Set(links.map(l => l.target))]
-				.map(s => {
-					const synset = { type: 'synset', ...factory(s) };
-					synsetMap[s] = synset;
-					return synset;
-				})
-		)
-
-		// Updating references on links
-		links.forEach(l => l.target = synsetMap[l.target]);
-		// Looking for synset inteserctions
-		links.forEach(l => l.target[l.source.type] = true);
-
-		if (this.scoring === "lu_wordnet") {
-			links = links.filter(l => l.target.frm1LU);
-		}
-		
-		// Identifying reference nodes
-		nodes.forEach(n => this.setReferenceNode(n));
-		// Update degrees
-		links.forEach(l => {
-			++l.source.outDegree;
-			++l.target.inDegree;
-		})
-
-		return { nodes, links };
 	}
 
 	load = action(data => {
@@ -220,29 +204,13 @@ class AlignmentStore {
 		this.LUsByFrame = data.lus;
 		this.synsetsByLU = data.resources.lu_to_syn;
 		this.synsetData = data.resources.syn_data;
+		this.vectorsByLU = data.resources.lu_to_vec;
+		this.vectorsId2Word = data.resources.id2word;
 
 		// Resets
 		this.sankeyFrames = [];
 		this.selectedEdge = [null, null];
 	})
-
-	setReferenceNode(n) {
-		switch(this.scoring) {
-			case "synset":
-				n.isReferenceNode = n.frm1LU;
-				n.isMatchingNode = n.frm1LU && n.frm2LU;
-				break;
-			case "synset_inv":
-				n.isReferenceNode = n.frm2LU;
-				n.isMatchingNode = n.frm1LU && n.frm2LU;
-				break;
-			case "lu_wordnet":
-				n.isReferenceNode = n.type === "frm1LU";
-				break;
-			default:
-				n.isReferenceNode = n.isMatchingNode = true;
-		}
-	}
 
 }
 
@@ -258,10 +226,11 @@ decorate(AlignmentStore, {
 	sankeyFrames: observable,
 	selectedEdge: observable,
 	threshold: observable,
+	vectorsByLU: observable,
+	vectorsId2Word: observable,
 	data: computed,
 	frames: computed,
 	scoringOptions: computed,
-	selectionGraph: computed,
 });
 
 export default AlignmentStore;
