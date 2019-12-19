@@ -61,8 +61,7 @@ const Sankey = observer(
 		onEdgeClick(edge) {
 			const {store} = this.props;
 
-			store.selectedEdge[0] = edge.primary;
-			store.selectedEdge[1] = edge.secondary;
+			store.setSelectedEdge(edge.primary, edge.secondary);
 			this.props.onAlignmentClick();
 		}
 
@@ -87,7 +86,7 @@ const Sankey = observer(
 			const {store} = this.props;
 			const colorGen = colors();
 			const colorMap =
-				[...new Set(store.data.map(x => x[0]))]
+				[...new Set(store.sankeyData.map(x => x[0]))]
 					.reduce((res, current) => {
 						res[current] = colorGen.next().value;
 						return res;
@@ -103,7 +102,7 @@ const Sankey = observer(
 			
 			this.bP =
 				viz.bP()
-					.data(store.data)
+					.data(store.sankeyData)
 					.min(12)
 					.pad(1)
 					.height(height-200)
@@ -135,7 +134,7 @@ const Sankey = observer(
 		}
 
 		render() {
-			const data = this.props.store.data;
+			const data = this.props.store.sankeyData;
 
 			return (
 				<div>

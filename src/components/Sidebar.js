@@ -35,7 +35,7 @@ export default observer(props => {
 				<Slider store={store} />
 				<h2>Frames</h2>
 				<MultiSelect
-					items={store.frames}
+					items={store.frameOptions}
 					selectedItems={store.sankeyFrames}
 					onChange={selected => store.sankeyFrames = selected}
 					itemHeight={30}

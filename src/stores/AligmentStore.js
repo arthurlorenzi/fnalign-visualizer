@@ -10,7 +10,9 @@ class AlignmentStore {
 
 	indices = []
 
-	LUsByFrame = {}
+	frames = {}
+
+	framesByName = {}
 
 	synsetsByLU = {}
 
@@ -28,27 +30,33 @@ class AlignmentStore {
 
 	vectorsId2Word = []
 
-	get data() {
+	get sankeyData() {
 		const alignment = this.alignments.find(x => x.type === this.scoring);
 
 		if (alignment) {
 			const {edges} = alignment;
 			const frameSet = new Set(this.sankeyFrames.map(x => x.id));
 
-			return edges.filter(x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold);
+			return edges
+				.filter(x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold)
+				.map(x => [
+					this.frames[x[0]].name + '.' + this.frames[x[0]].language,
+					this.frames[x[1]].name + '.' + this.frames[x[1]].language,
+					x[2],
+				]);
 		} else {
 			return [];
 		}
 	}
 
-	get frames() {
+	get frameOptions() {
 		return this.indices
 			.flat()
-			.sort()
 			.map(x => ({
 				id: x,
-				label: x
-			}));
+				label: this.frames[x].name + '.' + this.frames[x].language
+			}))
+			.sort((a , b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
 	}
 
 	get scoringOptions() {
@@ -138,11 +146,16 @@ class AlignmentStore {
 	createNode = x => ({ name: x, inDegree: 0, outDegree: 0, });
 
 	getLUNodes() {
-		return (
-			this.LUsByFrame[this.selectedEdge[0]] || []).map(x => ({ type: 'frm1LU', ...this.createNode(x) })
-		).concat(
-			(this.LUsByFrame[this.selectedEdge[1]] || []).map(x => ({ type: 'frm2LU', ...this.createNode(x) }))
-		);
+		if (this.selectedEdge[0] && this.selectedEdge[1]) {
+			return this.frames[this.selectedEdge[0]].LUs
+				.map(x => ({ type: 'frm1LU', ...this.createNode(x) }))
+				.concat(
+					this.frames[this.selectedEdge[1]].LUs
+					.map(x => ({ type: 'frm2LU', ...this.createNode(x) }))
+				);
+		} else {
+			return [];
+		}
 	}
 
 	getConnectionObjects(LUNodes, relationMap, nameFn=x=>x) {
@@ -200,8 +213,16 @@ class AlignmentStore {
 			return { type: a.type, desc: a.desc, edges: edges }
 		});
 
+		this.framesByName = {};
+		for (let key in data.frames) {
+			if (Object.prototype.hasOwnProperty.call(data.frames, key)) {
+				let frame = data.frames[key];
+				this.framesByName[frame.name + '.' + frame.language] = frame;
+			}
+		}
+
 		this.indices = data.indices;
-		this.LUsByFrame = data.lus;
+		this.frames = data.frames;
 		this.synsetsByLU = data.resources.lu_to_syn;
 		this.synsetData = data.resources.syn_data;
 		this.vectorsByLU = data.resources.lu_to_vec;
@@ -212,6 +233,11 @@ class AlignmentStore {
 		this.selectedEdge = [null, null];
 	})
 
+	setSelectedEdge = action((source, target) => {
+		this.selectedEdge[0] = this.framesByName[source].gid;
+		this.selectedEdge[1] = this.framesByName[target].gid;
+	})
+
 }
 
 decorate(AlignmentStore, {
@@ -219,7 +245,7 @@ decorate(AlignmentStore, {
 	language: observable,
 	alignments: observable,
 	indices: observable,
-	LUsByFrame: observable,
+	frames: observable,
 	synsetsByLU: observable,
 	synsetData: observable,
 	scoring: observable,
@@ -228,8 +254,8 @@ decorate(AlignmentStore, {
 	threshold: observable,
 	vectorsByLU: observable,
 	vectorsId2Word: observable,
-	data: computed,
-	frames: computed,
+	sankeyData: computed,
+	frameOptions: computed,
 	scoringOptions: computed,
 });
 
