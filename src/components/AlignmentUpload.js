@@ -23,6 +23,7 @@ class AlignmentUpload extends React.Component {
 				try {
 					store.load(JSON.parse(e.target.result));
 				} catch (exception) {
+					console.log(exception);
 					error = true;
 				}
 				this.setState({ error })
@@ -34,7 +35,7 @@ class AlignmentUpload extends React.Component {
 
 	renderError() {
 		const {error} = this.state;
-		return error ? <p className="upload-error">Erro ao ler o arquivo.</p> : null;
+		return error ? <p className="upload-error">Error reading input file.</p> : null;
 	}
 
 	render() {

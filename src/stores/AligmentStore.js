@@ -18,7 +18,7 @@ class AlignmentStore {
 
 	synsetData = {}
 
-	scoring = null
+	alignment = null
 
 	sankeyFrames = []
 
@@ -31,10 +31,9 @@ class AlignmentStore {
 	vectorsId2Word = []
 
 	get sankeyData() {
-		const alignment = this.alignments.find(x => x.type === this.scoring);
-
-		if (alignment) {
-			const {edges} = alignment;
+		if (this.alignment) {
+			const {edges} = this.alignment;
+			console.log(edges);
 			const frameSet = new Set(this.sankeyFrames.map(x => x.id));
 
 			return edges
@@ -61,13 +60,16 @@ class AlignmentStore {
 
 	get scoringOptions() {
 		return this.alignments.map(x => ({
-			value: x.type,
+			value: x.id,
 			label: x.desc,
 		}));
 	}
 
 	get graphData() {
-		switch(this.scoring) {
+		if (!this.alignment)
+			return { nodes: [], links: [] };
+
+		switch(this.alignment.type) {
 			case 'lu_wordnet':
 				return this.LUWordNetGraph();
 			case 'synset':
@@ -109,7 +111,7 @@ class AlignmentStore {
 
 		nodes.push(...inter.nodes);
 		const isReferenceFn =
-			this.scoring === 'synset'
+			this.alignment.type === 'synset'
 				? n => n.frm1LU
 				: n => n.frm2LU;
 		nodes.forEach(n => {
@@ -162,9 +164,11 @@ class AlignmentStore {
 		const links = LUNodes
 			.map(s =>
 				(relationMap[s.name] || [])
+					.slice(0, this.alignment.K)
+					.filter(t => t[0] > this.alignment.threshold)
 					.map(t => ({
 						source: s,
-						target: t,
+						target: t[1],
 					}))
 			)
 			.flat();
@@ -210,7 +214,11 @@ class AlignmentStore {
 				});
 			});
 
-			return { type: a.type, desc: a.desc, edges: edges }
+			const copy = { ...a };
+			copy.edges = edges;
+			delete copy.data;
+
+			return copy;
 		});
 
 		this.framesByName = {};
@@ -225,7 +233,7 @@ class AlignmentStore {
 		this.frames = data.frames;
 		this.synsetsByLU = data.resources.lu_to_syn;
 		this.synsetData = data.resources.syn_data;
-		this.vectorsByLU = data.resources.lu_to_vec;
+		this.vectorsByLU = data.resources.lu_vec_nn;
 		this.vectorsId2Word = data.resources.id2word;
 
 		// Resets
@@ -233,7 +241,11 @@ class AlignmentStore {
 		this.selectedEdge = [null, null];
 	})
 
-	setSelectedEdge = action((source, target) => {
+	selectAlignment = action(id => {
+		this.alignment = this.alignments.find(x => x.id === id);
+	})
+
+	selectEdge = action((source, target) => {
 		this.selectedEdge[0] = this.framesByName[source].gid;
 		this.selectedEdge[1] = this.framesByName[target].gid;
 	})
@@ -248,7 +260,7 @@ decorate(AlignmentStore, {
 	frames: observable,
 	synsetsByLU: observable,
 	synsetData: observable,
-	scoring: observable,
+	alignment: observable,
 	sankeyFrames: observable,
 	selectedEdge: observable,
 	threshold: observable,

@@ -61,7 +61,7 @@ const Sankey = observer(
 		onEdgeClick(edge) {
 			const {store} = this.props;
 
-			store.setSelectedEdge(edge.primary, edge.secondary);
+			store.selectEdge(edge.primary, edge.secondary);
 			this.props.onAlignmentClick();
 		}
 

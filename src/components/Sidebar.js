@@ -29,7 +29,7 @@ export default observer(props => {
 				<h2>Scoring method</h2>
 				<Select
 					options={store.scoringOptions}
-					onChange={o => store.scoring = o.value}
+					onChange={o => store.selectAlignment(o.value)}
 				/>
 				<h2>Score threshold</h2>
 				<Slider store={store} />

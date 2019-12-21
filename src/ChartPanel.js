@@ -36,7 +36,7 @@ const ChartPanel = observer(
 						onAlignmentClick={() => uiState.showAlignmentDetails = true}
 					/>
 					{
-						store.scoring === 'lu_muse'
+						store.alignment && store.alignment.type === 'lu_muse'
 							? <TranslationGraph store={store} />
 							: <SynsetGraph store={store} />
 					}
