@@ -73,6 +73,7 @@ class AlignmentStore {
 	}
 
 	get graphData() {
+		console.log("called")
 		if (!this.alignment)
 			return { nodes: [], links: [] };
 
@@ -172,10 +173,10 @@ class AlignmentStore {
 			.map(s =>
 				(relationMap[s.name] || [])
 					.slice(0, this.alignment.K)
-					.filter(t => t[0] > this.alignment.threshold)
+					.filter(t => !Array.isArray(t) || t[0] > this.alignment.threshold)
 					.map(t => ({
 						source: s,
-						target: t[1],
+						target: Array.isArray(t) ? t[1] : t,
 					}))
 			)
 			.flat();

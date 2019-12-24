@@ -10,8 +10,23 @@ import './ChartPanel.css';
 const ChartPanel = observer(
 	class ChartPanel extends React.Component {
 
+		selectableTypes = [
+			"lu_wordnet",
+			"synset",
+			"synset_inv",
+			"lu_muse"
+		]
+
 		onBackClick() {
 			this.props.uiState.showAlignmentDetails = false;
+		}
+
+		onAlignmentClick() {
+			const {store,uiState} = this.props;
+			
+			if (this.selectableTypes.indexOf(store.alignment.type) > -1) {
+				uiState.showAlignmentDetails = true
+			}
 		}
 
 		render() {
@@ -33,7 +48,7 @@ const ChartPanel = observer(
 					}
 					<Sankey
 						store={store}
-						onAlignmentClick={() => uiState.showAlignmentDetails = true}
+						onAlignmentClick={() => this.onAlignmentClick()}
 					/>
 					{
 						store.alignment && store.alignment.type === 'lu_muse'
