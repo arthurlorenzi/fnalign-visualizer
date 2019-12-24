@@ -12,7 +12,7 @@ export default observer(props => {
 				type="range"
 				min={0}
 				max={1}
-				step={0.0005}
+				step={0.001}
 				value={store.threshold}
 				onChange={e => store.threshold = +e.target.value}
 				className="slider" />

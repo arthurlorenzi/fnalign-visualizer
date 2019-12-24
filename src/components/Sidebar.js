@@ -5,12 +5,15 @@ import { FaBars } from 'react-icons/fa';
 import { observer } from 'mobx-react';
 
 import './Sidebar.css';
+
 import AlignmentUpload from './AlignmentUpload';
+import CheckBox from './CheckBox';
+import CheckBoxEnabledInput from './CheckBoxEnabledInput';
 import Slider from './Slider';
 
 export default observer(props => {
 	const {store, uiState} = props;
-	const style = { width: uiState.sidebarOpen ? '550px' : '60px' };
+	const style = { width: uiState.sidebarOpen ? '500px' : '60px' };
 	const display = { display: uiState.sidebarOpen ? 'block' : 'none' };
 
 	return (
@@ -24,18 +27,40 @@ export default observer(props => {
 				</div>
 			</div>
 			<div style={display} >
-				<h2>Alignment file</h2>
+				<h3 className="sidebar-field-label first">Alignment file</h3>
 				<AlignmentUpload store={store} />
-				<h2>Scoring method</h2>
-				<Select
-					options={store.scoringOptions}
-					onChange={o => store.selectAlignment(o.value)}
-				/>
-				<h2>Score threshold</h2>
-				<Slider store={store} />
-				<h2>Frames</h2>
+				<div className="sidebar-row">
+					<div>
+						<h3 className="sidebar-field-label">Scoring tecnique</h3>
+						<Select
+							options={store.scoringOptions}
+							onChange={o => store.selectAlignment(o.value)}
+						/>
+					</div>
+					<div>
+						<h3 className="sidebar-field-label">Threshold</h3>
+						<Slider store={store} />
+					</div>
+				</div>
+				<div className="sidebar-row">
+					<div>
+						<CheckBoxEnabledInput
+							onCheckedChange={(checked, value) => store.sankeyEdgesMax = checked ? value : Infinity}
+							onValueChange={value => store.sankeyEdgesMax = value}
+							min={1}
+							label="Restrict number of connections of each frame:"
+							placeholder="Max # of edges for frame"
+						/>
+					</div>
+					<div>
+						<CheckBox
+						onChange={checked => store.strictSankeySet = checked}
+						label="Show ONLY selected frames"/>
+					</div>
+				</div>
+				<h3 className="sidebar-field-label">Frame selection</h3>
 				<MultiSelect
-					items={store.frameOptions}
+					items={store.frameOptions}	
 					selectedItems={store.sankeyFrames}
 					onChange={selected => store.sankeyFrames = selected}
 					itemHeight={30}

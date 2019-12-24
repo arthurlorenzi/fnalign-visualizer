@@ -22,6 +22,10 @@ class AlignmentStore {
 
 	sankeyFrames = []
 
+	strictSankeySet = false
+
+	sankeyEdgesMax = null
+
 	selectedEdge = [null, null]
 
 	threshold = 0.1
@@ -33,11 +37,14 @@ class AlignmentStore {
 	get sankeyData() {
 		if (this.alignment) {
 			const {edges} = this.alignment;
-			console.log(edges);
 			const frameSet = new Set(this.sankeyFrames.map(x => x.id));
+			const filterFn = this.strictSankeySet
+				? x => frameSet.has(x[0]) && frameSet.has(x[1]) && x[2] >= this.threshold
+				: x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold;
 
-			return edges
-				.filter(x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold)
+			const filteredEdges = this.pruneEdges(edges.filter(filterFn));
+
+			return filteredEdges
 				.map(x => [
 					this.frames[x[0]].name + '.' + this.frames[x[0]].language,
 					this.frames[x[1]].name + '.' + this.frames[x[1]].language,
@@ -200,6 +207,30 @@ class AlignmentStore {
 		});
 	}
 
+	pruneEdges(edges) {
+		if (!this.sankeyEdgesMax)
+			return edges;
+
+		edges.sort((a, b) => {
+			if (a[0] > b[0]) {
+				return -1;
+			} else if (a[0] < b[0]) {
+				return 1;
+			} else {
+				return a[2] > b[2] ? -1 : a[2] < b[2] ? 1 : 0;
+			}
+		});
+
+		const counts = {};
+
+		edges.forEach(x => counts[x[0]] = 0);
+
+		return edges.filter(x => {
+			++counts[x[0]];
+			return counts[x[0]] <= this.sankeyEdgesMax;
+		});
+	}
+
 	load = action(data => {
 		this.fndb = data.db[1];
 		this.language = data.lang[1];
@@ -262,6 +293,8 @@ decorate(AlignmentStore, {
 	synsetData: observable,
 	alignment: observable,
 	sankeyFrames: observable,
+	strictSankeySet: observable,
+	sankeyEdgesMax: observable,
 	selectedEdge: observable,
 	threshold: observable,
 	vectorsByLU: observable,
