@@ -117,12 +117,13 @@ const TranslationGraph = observer(
 			const svg = select(this.root).select("svg");
 			const matching = data.nodes.filter(d => d.isMatchingNode).length;
 			const reference = data.nodes.filter(d => d.isReferenceNode && !d.isMatchingNode).length;
+			const selectedEdge = [null, null];
 
 			svg.select("#title")
 				.attr("x", this.margin)
 				.attr("y", this.height-this.margin/2)
 				.attr("class", "graph-info")
-				.text(`Frames: ${this.props.store.selectedEdge[0]}, ${this.props.store.selectedEdge[1]}`)
+				.text(`Frames: ${selectedEdge[0]}, ${selectedEdge[1]}`)
 
 			svg.select("#stats")
 				.attr("x", this.width)

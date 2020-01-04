@@ -21,11 +21,12 @@ const ChartPanel = observer(
 			this.props.uiState.showAlignmentDetails = false;
 		}
 
-		onAlignmentClick() {
-			const {store,uiState} = this.props;
+		onEdgeClick(source, target) {
+			const {uiState} = this.props;
 			
-			if (this.selectableTypes.indexOf(store.alignment.type) > -1) {
-				uiState.showAlignmentDetails = true
+			if (this.selectableTypes.indexOf(uiState.scoring.type) > -1) {
+				uiState.showAlignmentDetails = true;
+				uiState.selectEdge(source.gid, target.gid);
 			}
 		}
 
@@ -48,10 +49,10 @@ const ChartPanel = observer(
 					}
 					<Sankey
 						store={store}
-						onAlignmentClick={() => this.onAlignmentClick()}
+						onEdgeClick={(s, t) => this.onEdgeClick(s, t)}
 					/>
 					{
-						store.alignment && store.alignment.type === 'lu_muse'
+						uiState.scoring && uiState.scoring.type === 'lu_muse'
 							? <TranslationGraph store={store} />
 							: <SynsetGraph store={store} />
 					}

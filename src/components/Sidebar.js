@@ -15,6 +15,7 @@ export default observer(props => {
 	const {store, uiState} = props;
 	const style = { width: uiState.sidebarOpen ? '500px' : '60px' };
 	const display = { display: uiState.sidebarOpen ? 'block' : 'none' };
+	const params = uiState.scoring ? uiState.scoring.params : {}; 
 
 	return (
 		<div className="sidebar-container" style={style} >
@@ -33,20 +34,25 @@ export default observer(props => {
 					<div>
 						<h3 className="sidebar-field-label">Scoring tecnique</h3>
 						<Select
-							options={store.scoringOptions}
-							onChange={o => store.selectAlignment(o.value)}
+							options={uiState.scoringSelectOptions}
+							onChange={o => uiState.setScoring(o.value)}
 						/>
 					</div>
 					<div>
 						<h3 className="sidebar-field-label">Threshold</h3>
-						<Slider store={store} />
+						<Slider
+							value={params.threshold}
+							onChange={v => params.threshold = v}
+						/>
 					</div>
 				</div>
 				<div className="sidebar-row">
 					<div>
 						<CheckBoxEnabledInput
-							onCheckedChange={(checked, value) => store.sankeyEdgesMax = checked ? value : Infinity}
-							onValueChange={value => store.sankeyEdgesMax = value}
+							checked={params.limitSankeyEdges}
+							value={params.sankeyMaxEdges || ""}
+							onCheckedChange={c => params.limitSankeyEdges = c}
+							onValueChange={v => params.sankeyMaxEdges = v}
 							min={1}
 							label="Restrict number of connections of each frame:"
 							placeholder="Max # of edges for frame"
@@ -54,15 +60,17 @@ export default observer(props => {
 					</div>
 					<div>
 						<CheckBox
-						onChange={checked => store.strictSankeySet = checked}
-						label="Show ONLY selected frames"/>
+							checked={params.displayOnlyFrameSet}
+							onChange={c => params.displayOnlyFrameSet = c}
+							label="Show ONLY selected frames"
+						/>
 					</div>
 				</div>
 				<h3 className="sidebar-field-label">Frame selection</h3>
 				<MultiSelect
 					items={store.frameOptions}	
-					selectedItems={store.sankeyFrames}
-					onChange={selected => store.sankeyFrames = selected}
+					selectedItems={uiState.sankeyFrames}
+					onChange={selected => uiState.sankeyFrames = selected}
 					itemHeight={30}
 					wrapperClassName="multi-select-wrapper"
 				/>

@@ -4,7 +4,7 @@ import { observer } from 'mobx-react';
 import './Slider.css';
 
 export default observer(props => {
-	const {store} = props;
+	const {value, onChange} = props;
 
 	return (
 		<div className="slider-container">
@@ -13,16 +13,16 @@ export default observer(props => {
 				min={0}
 				max={1}
 				step={0.001}
-				value={store.threshold}
-				onChange={e => store.threshold = +e.target.value}
+				value={value}
+				onChange={e => onChange(+e.target.value)}
 				className="slider" />
 			<input
 				type="number"
 				min={0}
 				max={1}
 				step="any"
-				value={store.threshold}
-				onChange={e => store.threshold = +e.target.value}
+				value={value}
+				onChange={e => onChange(+e.target.value)}
 				className="slider-text" />
 		</div>
 	)

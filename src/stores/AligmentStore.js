@@ -1,12 +1,57 @@
 import { action, computed, decorate, observable } from 'mobx';
 
+const DEFAULT_PARAMS = {
+	attr_matching: {
+		threshold: 0,
+		sankeyFrameSet: [],
+		displayOnlyFrameSet: true,
+		sankeyMaxEdges: null,
+		limitSankeyEdges: false,
+	},
+	lu_wordnet: {
+		threshold: 0.4,
+		sankeyFrameSet: [],
+		displayOnlyFrameSet: false,
+		sankeyMaxEdges: null,
+		limitSankeyEdges: false,
+	},
+	synset: {
+		threshold: 0.1,
+		sankeyFrameSet: [],
+		displayOnlyFrameSet: false,
+		sankeyMaxEdges: null,
+		limitSankeyEdges: false,
+	},
+	synset_inv: {
+		threshold: 0.1,
+		sankeyFrameSet: [],
+		displayOnlyFrameSet: false,
+		sankeyMaxEdges: null,
+		limitSankeyEdges: false,
+	},
+	lu_muse: {
+		threshold: 0.75,
+		sankeyFrameSet: [],
+		displayOnlyFrameSet: false,
+		sankeyMaxEdges: 5,
+		limitSankeyEdges: true,
+	},
+	lu_mean_muse: {
+		threshold: 0.85,
+		sankeyFrameSet: [],
+		displayOnlyFrameSet: false,
+		sankeyMaxEdges: 5,
+		limitSankeyEdges: true,
+	}
+};
+
 class AlignmentStore {
 
 	fndb
 
 	language
 
-	alignments = []
+	edges = {}
 
 	indices = []
 
@@ -18,33 +63,27 @@ class AlignmentStore {
 
 	synsetData = {}
 
-	alignment = null
-
-	sankeyFrames = []
-
-	strictSankeySet = false
-
-	sankeyEdgesMax = null
-
-	selectedEdge = [null, null]
-
-	threshold = 0.1
-
 	vectorsByLU = []
 
 	vectorsId2Word = []
 
+	constructor(uiState) {
+		this.uiState = uiState;
+	}
+
 	get sankeyData() {
-		if (this.alignment) {
-			const {edges} = this.alignment;
-			const frameSet = new Set(this.sankeyFrames.map(x => x.id));
-			const filterFn = this.strictSankeySet
-				? x => frameSet.has(x[0]) && frameSet.has(x[1]) && x[2] >= this.threshold
-				: x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= this.threshold;
+		const state = this.uiState;
+		const {scoring} = state;
+		
+		if (scoring) {
+			const {params} = scoring;
+			const frameSet = new Set(state.sankeyFrames.map(x => x.id));
+			const filterFn = params.displayOnlyFrameSet
+				? x => frameSet.has(x[0]) && frameSet.has(x[1]) && x[2] >= params.threshold
+				: x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= params.threshold;
+			const filtered = this.edges[scoring.id].filter(filterFn);
 
-			const filteredEdges = this.pruneEdges(edges.filter(filterFn));
-
-			return filteredEdges
+			return this.pruneEdges(filtered)
 				.map(x => [
 					this.frames[x[0]].name + '.' + this.frames[x[0]].language,
 					this.frames[x[1]].name + '.' + this.frames[x[1]].language,
@@ -65,19 +104,13 @@ class AlignmentStore {
 			.sort((a , b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
 	}
 
-	get scoringOptions() {
-		return this.alignments.map(x => ({
-			value: x.id,
-			label: x.desc,
-		}));
-	}
-
 	get graphData() {
-		console.log("called")
-		if (!this.alignment)
+		const {scoring} = this.uiState;
+		
+		if (!scoring)
 			return { nodes: [], links: [] };
 
-		switch(this.alignment.type) {
+		switch(scoring.type) {
 			case 'lu_wordnet':
 				return this.LUWordNetGraph();
 			case 'synset':
@@ -113,15 +146,13 @@ class AlignmentStore {
 	}
 
 	synsetGraph() {
+		const type = this.uiState.scoring.type;
 		const nodes = this.getLUNodes();
 		const inter = this.getConnectionObjects(nodes, this.synsetsByLU);
 		const links = inter.links;
 
 		nodes.push(...inter.nodes);
-		const isReferenceFn =
-			this.alignment.type === 'synset'
-				? n => n.frm1LU
-				: n => n.frm2LU;
+		const isReferenceFn = type === 'synset' ? n => n.frm1LU : n => n.frm2LU;
 		nodes.forEach(n => {
 			n.isReferenceNode = isReferenceFn(n);
 			n.isMatchingNode = n.isIntersection;
@@ -156,11 +187,13 @@ class AlignmentStore {
 	createNode = x => ({ name: x, inDegree: 0, outDegree: 0, });
 
 	getLUNodes() {
-		if (this.selectedEdge[0] && this.selectedEdge[1]) {
-			return this.frames[this.selectedEdge[0]].LUs
+		const {selectedEdge} = this.uiState;
+
+		if (selectedEdge[0] && selectedEdge[1]) {
+			return this.frames[selectedEdge[0]].LUs
 				.map(x => ({ type: 'frm1LU', ...this.createNode(x) }))
 				.concat(
-					this.frames[this.selectedEdge[1]].LUs
+					this.frames[selectedEdge[1]].LUs
 					.map(x => ({ type: 'frm2LU', ...this.createNode(x) }))
 				);
 		} else {
@@ -169,11 +202,13 @@ class AlignmentStore {
 	}
 
 	getConnectionObjects(LUNodes, relationMap, nameFn=x=>x) {
+		const {params} = this.uiState.scoring;
+
 		const links = LUNodes
 			.map(s =>
 				(relationMap[s.name] || [])
-					.slice(0, this.alignment.K)
-					.filter(t => !Array.isArray(t) || t[0] > this.alignment.threshold)
+					.slice(0, params.K)
+					.filter(t => !Array.isArray(t) || t[0] > params.threshold)
 					.map(t => ({
 						source: s,
 						target: Array.isArray(t) ? t[1] : t,
@@ -209,7 +244,9 @@ class AlignmentStore {
 	}
 
 	pruneEdges(edges) {
-		if (!this.sankeyEdgesMax)
+		const {params} = this.uiState.scoring;
+
+		if (!params.limitSankeyEdges)
 			return edges;
 
 		edges.sort((a, b) => {
@@ -228,7 +265,7 @@ class AlignmentStore {
 
 		return edges.filter(x => {
 			++counts[x[0]];
-			return counts[x[0]] <= this.sankeyEdgesMax;
+			return counts[x[0]] <= params.sankeyMaxEdges;
 		});
 	}
 
@@ -236,21 +273,16 @@ class AlignmentStore {
 		this.fndb = data.db[1];
 		this.language = data.lang[1];
 
-		this.alignments = data.alignments.map(a => {
+		this.edges = {}
+		data.alignments.forEach(x => {
 			const edges = [];
-
-			a.data.forEach((row, i) => {
+			x.data.forEach((row, i) => {
 				row.forEach((value, j) => {
 					if (value > 0)
 						edges.push([data.indices[0][i], data.indices[1][j], value])
 				});
 			});
-
-			const copy = { ...a };
-			copy.edges = edges;
-			delete copy.data;
-
-			return copy;
+			this.edges[x.id] = edges;
 		});
 
 		this.framesByName = {};
@@ -261,6 +293,14 @@ class AlignmentStore {
 			}
 		}
 
+		this.uiState.scoringOptions =
+			data.alignments.map(x => ({
+				id: x.id,
+				desc: x.desc,
+				type: x.type,
+				params: DEFAULT_PARAMS[x.type]
+			}));
+
 		this.indices = data.indices;
 		this.frames = data.frames;
 		this.synsetsByLU = data.resources.lu_to_syn;
@@ -269,17 +309,9 @@ class AlignmentStore {
 		this.vectorsId2Word = data.resources.id2word;
 
 		// Resets
-		this.sankeyFrames = [];
-		this.selectedEdge = [null, null];
-	})
-
-	selectAlignment = action(id => {
-		this.alignment = this.alignments.find(x => x.id === id);
-	})
-
-	selectEdge = action((source, target) => {
-		this.selectedEdge[0] = this.framesByName[source].gid;
-		this.selectedEdge[1] = this.framesByName[target].gid;
+		this.uiState.selectedEdge = [null, null];
+		this.uiState.scoring = null;
+		this.uiState.sankeyFrames = [];
 	})
 
 }
@@ -287,22 +319,14 @@ class AlignmentStore {
 decorate(AlignmentStore, {
 	fndb: observable,
 	language: observable,
-	alignments: observable,
 	indices: observable,
 	frames: observable,
 	synsetsByLU: observable,
 	synsetData: observable,
-	alignment: observable,
-	sankeyFrames: observable,
-	strictSankeySet: observable,
-	sankeyEdgesMax: observable,
-	selectedEdge: observable,
-	threshold: observable,
 	vectorsByLU: observable,
 	vectorsId2Word: observable,
 	sankeyData: computed,
 	frameOptions: computed,
-	scoringOptions: computed,
 });
 
 export default AlignmentStore;

@@ -8,8 +8,8 @@ import AlignmentStore from './stores/AligmentStore';
 import UiState from './stores/UiState';
 import ChartPanel from './ChartPanel';
 
-const store = new AlignmentStore();
 const uiState = new UiState();
+const store = new AlignmentStore(uiState);
 
 function App() {
 	return (

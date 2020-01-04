@@ -60,9 +60,10 @@ const Sankey = observer(
 
 		onEdgeClick(edge) {
 			const {store} = this.props;
-
-			store.selectEdge(edge.primary, edge.secondary);
-			this.props.onAlignmentClick();
+			this.props.onEdgeClick(
+				store.framesByName[edge.primary],
+				store.framesByName[edge.secondary],
+			);
 		}
 
 		select(bar) {
