@@ -27,9 +27,8 @@ const SynsetGraph = observer(
 			const highlighted = new Set();
 
 			links.each(d => {
-				if (d.target === datum) {
-					highlighted.add(d.source.name.replace(this.posRegex, ''))
-				}
+				highlighted.add(d.source.name.replace(this.posRegex, ''))
+				highlighted.add(d.target.name.replace(this.posRegex, ''))
 			});
 
 			select("#synset-name").html(datum.name);
