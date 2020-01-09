@@ -99,7 +99,8 @@ class AlignmentStore {
 			.flat()
 			.map(x => ({
 				id: x,
-				label: this.frames[x].name + '.' + this.frames[x].language
+				label: this.frames[x].name + '.' + this.frames[x].language,
+				disabled: this.frames[x].LUs.length === 0,
 			}))
 			.sort((a , b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
 	}
