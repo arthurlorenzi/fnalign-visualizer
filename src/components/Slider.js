@@ -15,11 +15,11 @@ const Slider = observer(
 			/**
 			 * The current value of the slider.
 			 */
-			value: PropTypes.number,
+			value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 			/**
 			 * A callback called when the slider value changes.
 			 * 
-			 * @param {number} value the new value.
+			 * @param {string} value the new value.
 			 */
 			onChange: PropTypes.func,
 		}
@@ -35,7 +35,7 @@ const Slider = observer(
 						max={1}
 						step={0.001}
 						value={value || ""}
-						onChange={e => onChange(+e.target.value)}
+						onChange={e => onChange(e.target.value)}
 						className="slider" />
 					<input
 						type="number"
@@ -43,7 +43,7 @@ const Slider = observer(
 						max={1}
 						step="any"
 						value={value || ""}
-						onChange={e => onChange(+e.target.value)}
+						onChange={e => onChange(e.target.value)}
 						className="slider-text" />
 				</div>
 			);

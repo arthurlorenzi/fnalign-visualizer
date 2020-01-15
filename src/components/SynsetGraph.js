@@ -97,7 +97,7 @@ const SynsetGraph = observer(
 		}
 
 		render() {
-			const {store} = this.props;
+			const {store, framePair} = this.props;
 
 			return (
 				<div ref={node => this.root = node}>
@@ -112,6 +112,7 @@ const SynsetGraph = observer(
 						</div>
 						<LUMatchingGraph
 							store={store}
+							framePair={framePair}
 							onMouseOverNode={this.onMouseOverNode}
 							onMouseOutNode={this.onMouseOutNode}
 						/>

@@ -169,31 +169,36 @@ const LUMatchingGraph = observer(
 		 * @param {Object} data Graph data object as returned by getRenderingData.
 		 */
 		includeFooter(data) {
+			const {store, framePair} = this.props;
 			const svg = select(this.root).select("svg");
 			const matching = data.nodes.filter(d => d.isMatchingNode).length;
 			const reference = data.nodes.filter(d => d.isReferenceNode && !d.isMatchingNode).length;
-			const selectedEdge = [null, null];
+			
+			if (store.frames[framePair[0]] && store.frames[framePair[1]]) {
+				const right = store.frames[framePair[0]];
+				const left = store.frames[framePair[1]];
 
-			svg.select("#title")
+				svg.select("#title")
 				.attr("x", this.margin)
 				.attr("y", this.height-this.margin/2)
 				.attr("class", "graph-info")
-				.text(`Frames: ${selectedEdge[0]}, ${selectedEdge[1]}`)
+				.text(`Frames: ${right.name} (${right.gid}), ${left.name} (${left.gid})`)
 
-			svg.select("#stats")
-				.attr("x", this.width)
-				.attr("y", this.height-this.margin/2)
-				.attr("class", "graph-info graph-score")
-				.html(`
-					Alignment score:
-					<tspan class="match">${matching}</tspan>
-					÷
-					(
-					<tspan class="match">${matching}</tspan>
-					+
-					<tspan class="reference">${reference}</tspan>
-					)
-					= ${scoreFormatter(matching/(matching + reference))}`)
+				svg.select("#stats")
+					.attr("x", this.width)
+					.attr("y", this.height-this.margin/2)
+					.attr("class", "graph-info graph-score")
+					.html(`
+						Alignment score:
+						<tspan class="match">${matching}</tspan>
+						÷
+						(
+						<tspan class="match">${matching}</tspan>
+						+
+						<tspan class="reference">${reference}</tspan>
+						)
+						= ${scoreFormatter(matching/(matching + reference))}`)
+			}
 		}
 
 		/**

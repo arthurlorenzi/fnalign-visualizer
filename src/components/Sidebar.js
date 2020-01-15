@@ -104,7 +104,7 @@ const Sidebar = observer(
 		 * @method
 		 * @param {number} value a integer edge limit for each frame.
 		 */
-		onSankeyEdgesMaxChange = value => this.updateParam("sankeyEdgesMax", value)
+		onSankeyEdgesMaxChange = value => this.updateParam("sankeyMaxEdges", value)
 
 		/**
 		 * Handles change on checkbox "Show ONLY selected frames".

@@ -61,7 +61,7 @@ const ChartPanel = observer(
 			
 			if (this.selectableTypes.indexOf(uiState.scoring.type) > -1) {
 				uiState.isAlignmentDetailVisible = true;
-				uiState.selectEdge(source.gid, target.gid);
+				uiState.setSelectedFramePair(source.gid, target.gid);
 			}
 		}
 
@@ -89,8 +89,8 @@ const ChartPanel = observer(
 					/>
 					{
 						uiState.scoring && uiState.scoring.type === 'lu_muse'
-							? <LUMatchingGraph store={store} />
-							: <SynsetGraph store={store} />
+							? <LUMatchingGraph store={store} framePair={uiState.selectedFrames} />
+							: <SynsetGraph store={store} framePair={uiState.selectedFrames} />
 					}
 				</div>
 			)
