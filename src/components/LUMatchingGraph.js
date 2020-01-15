@@ -1,36 +1,75 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import {observer} from 'mobx-react';
 import {format} from 'd3-format';
 import {select} from 'd3-selection';
 import {scalePoint} from 'd3-scale';
 
-import './TranslationGraph.css';
+import './LUMatchingGraph.css';
 
-const TranslationGraph = observer(
-	class TranslationGraph extends React.Component {
+import AlignmentStore from '../stores/AlignmentStore';
 
-		root = null
+const scoreFormatter = format(".3f");
 
-		links = null
+/**
+ * A component for lexical unit matching graphs.
+ */
+const LUMatchingGraph = observer(
+	class LUMatchingGraph extends React.Component {
+		static propTypes = {
+			/**
+			 * A mobx store of frame alignments.
+			 */
+			store: PropTypes.instanceOf(AlignmentStore),
+			/**
+			 * A callback called when mouse is placed over of the nodes.
+			 */
+			onMouseOverNode: PropTypes.func,
+			/**
+			 * A callback called when mouse is leaves of the nodes.
+			 */
+			onMouseOutNode: PropTypes.func,
+		}
 
-		nodes = null
+		constructor() {
+			super();
+			this.root = null;
+			this.links = null;
+			this.nodes = null;
+			this.height = null;
+			this.width = null;
+			this.margin = null;
+		}
 
-		height = null
-		
-		width = null
-
-		margin = null
-
-		scoreFormatter = format(".3f")
-
+		/**
+		 * Manually invokes D3.js rendering function when the component is mounted.
+		 * 
+		 * @public
+		 * @method
+		 */
 		componentDidMount() {
 			this.renderGraph();
 		}
 
+		/**
+		 * Manually invokes D3.js rendering function when the component is updated.
+		 * 
+		 * @public
+		 * @method
+		 */
 		componentDidUpdate() {
 			this.renderGraph();
 		}
 
+		/**
+		 * Gets all required data for rendering. Basic node and link data comes
+		 * from the store received from props, this method computes the coordinates
+		 * where each element should be rendered.
+		 * 
+		 * @public
+		 * @method
+		 * @returns {Object} Graph definition with a node list and a link list.
+		 */
 		getRenderingData() {
 			const {store} = this.props;
 			const data = store.graphData;
@@ -85,6 +124,14 @@ const TranslationGraph = observer(
 			}
 		}
 
+		/**
+		 * Computes the path string for the path element of the given link data.
+		 * 
+		 * @public
+		 * @method
+		 * @param {Object} datum Link data object.
+		 * @returns {string} A string of path commands.
+		 */
 		computePath(datum) {
 			let coef;
 			let x1 = datum.source.x;
@@ -113,6 +160,14 @@ const TranslationGraph = observer(
 			`;
 		}
 
+		/**
+		 * Renders the graph footer that shows the frame names and the alignment
+		 * score of the pair.
+		 * 
+		 * @public
+		 * @method
+		 * @param {Object} data Graph data object as returned by getRenderingData.
+		 */
 		includeFooter(data) {
 			const svg = select(this.root).select("svg");
 			const matching = data.nodes.filter(d => d.isMatchingNode).length;
@@ -138,10 +193,19 @@ const TranslationGraph = observer(
 					+
 					<tspan class="reference">${reference}</tspan>
 					)
-					= ${this.scoreFormatter(matching/(matching + reference))}`)
+					= ${scoreFormatter(matching/(matching + reference))}`)
 		}
 
-
+		/**
+		 * Renders the matching graph using D3.js and sets up DOM events for its
+		 * elements. This rendering should be controlled by D3.js and not ReactJS.
+		 * This guarantees that the diagram will not be part of React's virtual
+		 * DOM, thus preventing the framework from interfering with elements
+		 * created by the library (D3.js).
+		 * 
+		 * @public
+		 * @method
+		 */
 		renderGraph() {
 			this.height = window.innerHeight-10;
 			this.width = 960;
@@ -192,6 +256,15 @@ const TranslationGraph = observer(
 			this.includeFooter(data);
 		}
 
+		/**
+		 * Handles mouse over node event highlighting the element and its links. It
+		 * also invokes the handler of the parent component when it is passed via
+		 * props.
+		 * 
+		 * @public
+		 * @method
+		 * @param {Object} datum Node data object.
+		 */
 		onMouseOverNode(datum) {
 			const linked = new Set();
 
@@ -211,6 +284,14 @@ const TranslationGraph = observer(
 				this.props.onMouseOverNode(datum, this.nodes, this.links);
 		}
 
+		/**
+		 * Handles mouse out of node event, removing any highlight that was applied
+		 * before and invoking the parent component's handler when it is passed via
+		 * props.
+		 * 
+		 * @public
+		 * @method
+		 */
 		onMouseOutNode() {
 			this.links.attr("opacity", 0.1);
 			this.nodes
@@ -253,4 +334,4 @@ const TranslationGraph = observer(
 	}
 );
 
-export default TranslationGraph;
+export default LUMatchingGraph;

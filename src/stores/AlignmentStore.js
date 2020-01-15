@@ -1,5 +1,6 @@
 import { action, computed, decorate, observable } from 'mobx';
 
+// Default params of each scoring type
 const DEFAULT_PARAMS = {
 	attr_matching: {
 		threshold: 0,
@@ -45,32 +46,76 @@ const DEFAULT_PARAMS = {
 	}
 };
 
+/**
+ * MobX store for alignment data of a specific FrameNet database against
+ * Berkeley FrameNet.
+ */
 class AlignmentStore {
 
+	/**
+	 * Name of the FrameNet database of loaded alignemnt.
+	 */
 	fndb
 
+	/**
+	 * Language of this.fndb, aka, L2.
+	 */
 	language
 
+	/**
+	 * Dictionary to hold multiple lists of non-zero alignment score between two
+	 * frames, the key for each list is a string representing a scoring technique.
+	 */
 	edges = {}
 
+	/**
+	 * String indices of the scoring matrix of shape (M, N) where M is the number
+	 * of english frames e N the number of L2 frames.
+	 */
 	indices = []
 
+	/**
+	 * Frame data dictionary with global ids as keys.
+	 */
 	frames = {}
 
+	/**
+	 * Frame data dictionary with frame names + language as keys.
+	 */
 	framesByName = {}
 
+	/**
+	 * Mapping of LU names to a list of relevant synsets.
+	 */
 	synsetsByLU = {}
 
+	/**
+	 * Synset data dictionary with synset ids as keys.
+	 */
 	synsetData = {}
 
-	vectorsByLU = []
+	/**
+	 * Mapping of english LU names to word vectors ids in L2 space.
+	 */
+	vectorIdsByLU = []
 
-	vectorsId2Word = []
+	/**
+	 * Dictionary of words with vector ids as keys.
+	 */
+	wordsByVectorId = []
 
 	constructor(uiState) {
 		this.uiState = uiState;
 	}
 
+	/**
+	 * Returns the edges of a sankey diagram of the stored alignment respecting
+	 * UI params. 
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Array} edges of the sankey diagram with source, target and size.
+	 */
 	get sankeyData() {
 		const state = this.uiState;
 		const {scoring} = state;
@@ -94,6 +139,15 @@ class AlignmentStore {
 		}
 	}
 
+	/**
+	 * Returns a sorted list of frames present in this alignment indicating if
+	 * they can be selected for visualization. Frames with no LUs cannot be
+	 * selected.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Array} english + L2 frames in "Select" components option format.
+	 */
 	get frameOptions() {
 		return this.indices
 			.flat()
@@ -105,6 +159,18 @@ class AlignmentStore {
 			.sort((a , b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
 	}
 
+	/**
+	 * Returns the LU matching graph definition of the selected alignemnt. When
+	 * no alignment is selected, i.e., the UI state doesn't have a pair of
+	 * selected frames, this method should return an empty list for both node and
+	 * link definitions. The same applies with the method has no mapping between
+	 * LUs (e.g. The alignment is score is the similarity of the average LU
+	 * vector of each frame).
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Object} Graph definition with a node list and a link list.
+	 */
 	get graphData() {
 		const {scoring} = this.uiState;
 		
@@ -124,6 +190,14 @@ class AlignmentStore {
 		}
 	}
 
+	/**
+	 * Returns the LU matching graph definition for lu_wordnet scoring, where
+	 * two LUs are matched when both are in the same synset.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Object} Graph definition with a node list and a link list.
+	 */
 	LUWordNetGraph() {
 		const nodes = this.getLUNodes();
 		const inter = this.getConnectionObjects(nodes, this.synsetsByLU);
@@ -146,6 +220,16 @@ class AlignmentStore {
 		return { nodes, links };
 	}
 
+	/**
+	 * Returns the LU matching graph definition for synset/synset_inv scoring,
+	 * where a set of synsets is defined for each frame (based on their LUs) and
+	 * the intersection between two sets is the base of the alignment between two
+	 * frames.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Object} Graph definition with a node list and a link list.
+	 */
 	synsetGraph() {
 		const type = this.uiState.scoring.type;
 		const nodes = this.getLUNodes();
@@ -163,9 +247,18 @@ class AlignmentStore {
 		return { nodes, links };
 	}
 
+	/**
+	 * Returns the LU matching graph definition for lu_muse scoring, where a
+	 * match between two LUs happen when the cosine similarity of their vectors
+	 * is more than a given threshold.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Object} Graph definition with a node list and a link list.
+	 */
 	LUMuseGraph() {
 		const nodes = this.getLUNodes();
-		const inter = this.getConnectionObjects(nodes, this.vectorsByLU, x => this.vectorsId2Word[x]);
+		const inter = this.getConnectionObjects(nodes, this.vectorIdsByLU, x => this.wordsByVectorId[x]);
 		const links = inter.links.filter(l => l.target.frm1LU);
 
 		nodes.push(...inter.nodes.filter(n => n.frm1LU));
@@ -185,16 +278,33 @@ class AlignmentStore {
 		return { nodes, links };
 	}
 
-	createNode = x => ({ name: x, inDegree: 0, outDegree: 0, });
+	/**
+	 * Creates an object containing basic information of a graph node for
+	 * visualization based on the node name.
+	 * 
+	 * @public
+	 * @method
+	 * @param {string} name the name of the node.
+	 * @returns {Object} graph node object.
+	 */
+	createNode = name => ({ name: name, inDegree: 0, outDegree: 0, });
 
+	/**
+	 * Returns the list of LU nodes of the selected frames identifying if they
+	 * are LUs from the first or the second frame.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Array} list of LU nodes.
+	 */
 	getLUNodes() {
-		const {selectedEdge} = this.uiState;
+		const {selectedFrames} = this.uiState;
 
-		if (selectedEdge[0] && selectedEdge[1]) {
-			return this.frames[selectedEdge[0]].LUs
+		if (selectedFrames[0] && selectedFrames[1]) {
+			return this.frames[selectedFrames[0]].LUs
 				.map(x => ({ type: 'frm1LU', ...this.createNode(x) }))
 				.concat(
-					this.frames[selectedEdge[1]].LUs
+					this.frames[selectedFrames[1]].LUs
 					.map(x => ({ type: 'frm2LU', ...this.createNode(x) }))
 				);
 		} else {
@@ -202,6 +312,20 @@ class AlignmentStore {
 		}
 	}
 
+	/**
+	 * Generates intermediate node objects for a graph based on the mapping of
+	 * LUs to these nodes. An intermediate node can be, for example, a synset
+	 * node that was used as  "translator". The method returns those nodes and
+	 * their links to LU nodes.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Array} LUNodes list of LU nodes.
+	 * @param {Object} relationMap mapping of LUs to intermediate node ids.
+	 * @param {function} nameFn function to get the name of a node using id.
+	 * @returns {Object} A object containing the intermediate nodes of the graph
+	 * and their links to LU nodes.
+	 */
 	getConnectionObjects(LUNodes, relationMap, nameFn=x=>x) {
 		const {params} = this.uiState.scoring;
 
@@ -237,6 +361,13 @@ class AlignmentStore {
 		return { nodes, links };
 	}
 
+	/**
+	 * Computes the degrees of each node in a graph based on its link Array.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Array} links link list of a graph.
+	 */
 	computeDegrees(links) {
 		links.forEach(l => {
 			++l.source.outDegree;
@@ -244,6 +375,16 @@ class AlignmentStore {
 		});
 	}
 
+	/**
+	 * Filters the Sankey diagram edge list based on the UI visualization params.
+	 * The list is returned unchanged when limitation of edges on the Sankey
+	 * diagram is disabled.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Array} edges Sankey diagram edges.
+	 * @returns {Array} filtered array of edges.
+	 */
 	pruneEdges(edges) {
 		const {params} = this.uiState.scoring;
 
@@ -270,6 +411,13 @@ class AlignmentStore {
 		});
 	}
 
+	/**
+	 * Loads a JSON alignment file into the store.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Object} data parsed alignment JSON file.
+	 */
 	load = action(data => {
 		this.fndb = data.db[1];
 		this.language = data.lang[1];
@@ -306,11 +454,11 @@ class AlignmentStore {
 		this.frames = data.frames;
 		this.synsetsByLU = data.resources.lu_to_syn;
 		this.synsetData = data.resources.syn_data;
-		this.vectorsByLU = data.resources.lu_vec_nn;
-		this.vectorsId2Word = data.resources.id2word;
+		this.vectorIdsByLU = data.resources.lu_vec_nn;
+		this.wordsByVectorId = data.resources.id2word;
 
 		// Resets
-		this.uiState.selectedEdge = [null, null];
+		this.uiState.setSelectedFramePair(null, null);
 		this.uiState.scoring = null;
 		this.uiState.sankeyFrames = [];
 	})
@@ -324,8 +472,8 @@ decorate(AlignmentStore, {
 	frames: observable,
 	synsetsByLU: observable,
 	synsetData: observable,
-	vectorsByLU: observable,
-	vectorsId2Word: observable,
+	vectorIdsByLU: observable,
+	wordsByVectorId: observable,
 	sankeyData: computed,
 	frameOptions: computed,
 });

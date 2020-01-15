@@ -1,12 +1,26 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { format } from 'd3-format';
 import { select } from 'd3-selection';
 import { observer } from 'mobx-react';
-// TODO: Should redo this d3 layout (it's kinda bad!)
-import viz from './viz.js';
+// TODO: Should redo this d3 layout
+import viz from '../layouts/viz.js';
 
 import './Sankey.css';
 
+import AlignmentStore from '../stores/AlignmentStore';
+
+// A 3-decimal precision formatter.
+const scoreFormatter = format(".3f");
+
+/**
+ * Infinitely yields hex colors strings. Since the amount of hex color strings
+ * is finite, the same list is yielded through a circular iteration.
+ * 
+ * @generator
+ * @function colors
+ * @yields {string} a hex color string
+ */
 const colors = function*() {
 	const colors = [
 		"#3366CC",
@@ -24,65 +38,145 @@ const colors = function*() {
 	}
 };
 
+/**
+ * 
+ * A Sankey diagram component that uses D3.js to render the visualization as a
+ * svg image. This diagram supports click events on Sankey labels and flow
+ * connections.
+ *
+ */
 const Sankey = observer(
 	class Sankey extends React.Component {
 
-		svg = null
+		static propTypes = {
+			/**
+			 * A mobx store of frame alignments.
+			 */
+			store: PropTypes.instanceOf(AlignmentStore),
+			/**
+			 * A callback called a edge of the diagram is clicked.
+			 * 
+			 * @param {Array} edge A 2-position array containing the source and target of the edge.
+			 */
+			onEdgeClick: PropTypes.func,
+		}
 
-		selection = null
+		constructor(props) {
+			super(props);
 
-		scoreFormatter = format(".3f")
+			// Reference to svg element
+			this.svg = null;
+			// Expanded diagram node
+			this.selection = null;
+			// Reference to D3.js layout of the diagram
+			this.bP = null;
+			// Reference to diagram root "g" svg element
+			this.bPg = null;
+		}
 
-		bP = null
-
-		bPg = null
-
+		/**
+		 * Manually invokes D3.js rendering function when the component is mounted.
+		 * 
+		 * @public
+		 * @method
+		 */
 		componentDidMount() {
 			this.renderSankey();
 		}
 
+		/**
+		 * Manually invokes D3.js rendering function when the component is updated.
+		 * 
+		 * @public
+		 * @method
+		 */
 		componentDidUpdate() {
 			this.renderSankey();
 		}
 
-		onBarClick(bar) {
+		/**
+		 * Handles click on a bar/node/label of the Sankey diagram. The clicked
+		 * item will be expanded or shrink depending of the current state of the
+		 * digram.
+		 * 
+		 * @public
+		 * @model
+		 * @param {Object} bar data object of the clicked bar/label.
+		 */
+		onNodeClick(bar) {
 			if (this.selection && this.selection.key === bar.key) {
-				this.unselect(this.selection);
+				this.shrink(this.selection);
 				this.selection = null;
 			} else {
 				if (this.selection) {
-					this.unselect(this.selection);
+					this.shrink(this.selection);
 				}
 				this.selection = bar;
-				this.select(bar);
+				this.expand(bar);
 			}
 		}
 
+		/**
+		 * Handles click on a edge/connection of the diagram calling parent
+		 * component's handler.
+		 * 
+		 * @public
+		 * @method
+		 * @param {Object} edge data object of the clicked edge.
+		 */
 		onEdgeClick(edge) {
-			const {store} = this.props;
-			this.props.onEdgeClick(
+			const {store, onEdgeClick} = this.props;
+			
+			onEdgeClick(
 				store.framesByName[edge.primary],
 				store.framesByName[edge.secondary],
 			);
 		}
 
-		select(bar) {
+		/**
+		 * Expands one of the diagram nodes. This will hide all diagram connections
+		 * except the ones where the parameter node is source or target. The score
+		 * of these connections is also displayed.
+		 * 
+		 * @public
+		 * @method
+		 * @param {Object} node data object of the node being expanded.
+		 */
+		expand(node) {
 			const filterFn =
-				bar.part === "primary"
-					? (d => bar.key === d.primary)
-					: (d => bar.key === d.secondary);
+				node.part === "primary"
+					? (d => node.key === d.primary)
+					: (d => node.key === d.secondary);
 
-			this.bP.mouseover(bar);
+			this.bP.mouseover(node);
 			this.bPg.selectAll(".score")
 				.filter(filterFn)
-				.text(d => this.scoreFormatter(d.value))
+				.text(d => scoreFormatter(d.value))
 		}
 
-		unselect(bar) {
-			this.bP.mouseout(bar);
+		/**
+		 * Shrinks all diagram node expansions, showing all edges and hiding score
+		 * numbers.
+		 * 
+		 * @public
+		 * @method
+		 * @param {Object} node data object of the node being shrinked.
+		 */
+		shrink(node) {
+			this.bP.mouseout(node);
 			this.bPg.selectAll(".score").text("");
 		}
 
+		/**
+		 * Renders the svg Sankey diagram using D3.js and sets up DOM events for its
+		 * elements. This rendering should be controlled by D3.js and not ReactJS.
+		 * This guarantees that the diagram will not be part of React's virtual
+		 * DOM, thus preventing the framework from interfering with elements
+		 * created by the library (D3.js).
+		 * 
+		 * @public
+		 * @method
+		 */
 		renderSankey() {
 			const {store} = this.props;
 			const colorGen = colors();
@@ -101,6 +195,7 @@ const Sankey = observer(
 
 			const g = svg.append("g").attr("transform","translate(200,50)");
 			
+			// Create layout for sankey (AKA bipartite graph)
 			this.bP =
 				viz.bP()
 					.data(store.sankeyData)
@@ -112,19 +207,22 @@ const Sankey = observer(
 			
 			this.bPg = g.call(this.bP);
 
+			// Setting up events
 			this.bPg.selectAll(".mainBars")
-				.on("click", d => this.onBarClick(d));
+				.on("click", d => this.onNodeClick(d));
 			
 			this.bPg.selectAll(".edges")
 				.on("click", d => this.onEdgeClick(d));
 
-				this.bPg.selectAll(".subBars")
+			// Appending score text elements
+			this.bPg.selectAll(".subBars")
 				.filter(d => d.part === "secondary")
 				.append("text")
 					.attr("class", "score")
 					.attr("x", -58)
 					.attr("y", 6)
 			
+			// Appending node name text elements
 			this.bPg.selectAll(".mainBars")
 				.append("text")
 					.attr("class","label")
