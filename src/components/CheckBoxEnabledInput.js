@@ -1,8 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import CheckBox from './CheckBox';
 import './CheckBoxEnabledInput.css';
+
+import CheckBox from './CheckBox';
+import NumericInput from './NumericInput';
 
 /**
  * 
@@ -65,13 +67,12 @@ export default class CheckBoxEnabledInput extends React.Component {
 					label={label}
 				/>
 				<div className="checkbox-enabled-input-input-wrapper">
-					<input
-						type="number"
-						value={value || ""}
-						onChange={e => onValueChange(Number(e.target.value))}
+					<NumericInput
 						min={min}
 						placeholder={placeholder}
+						value={value}
 						disabled={!checked}
+						onChange={onValueChange}
 					/>
 				</div>
 			</div>

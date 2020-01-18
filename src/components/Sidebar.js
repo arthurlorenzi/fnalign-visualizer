@@ -7,9 +7,11 @@ import { observer } from 'mobx-react';
 
 import './Sidebar.css';
 
-import JsonFileInput from './JsonFileInput';
 import CheckBox from './CheckBox';
 import CheckBoxEnabledInput from './CheckBoxEnabledInput';
+import FormLabel from './FormLabel';
+import JsonFileInput from './JsonFileInput';
+import NumericInput from './NumericInput';
 import Slider from './Slider';
 
 import AlignmentStore from '../stores/AlignmentStore';
@@ -102,7 +104,7 @@ const Sidebar = observer(
 		 * 
 		 * @public
 		 * @method
-		 * @param {number} value a integer edge limit for each frame.
+		 * @param {number} value an integer edge limit for each frame.
 		 */
 		onSankeyEdgesMaxChange = value => this.updateParam("sankeyMaxEdges", value)
 
@@ -114,12 +116,63 @@ const Sidebar = observer(
 		 * @param {boolean} checked whether the checkbox is checked. 
 		 */
 		onDisplayOnlyFrameSetChange = checked => this.updateParam("displayOnlyFrameSet", checked)
+
+		/**
+		 * Handles change in vector neighborhood size parameter.
+		 * 
+		 * @public
+		 * @method
+		 * @param {number} value an integer neighborhood size.
+		 */
+		onNeighborhoodSizeChange = value => this.updateParam("neighborhoodSize", value)
+
+		/**
+		 * Handles change in cosine similarity threshold.
+		 * 
+		 * @public
+		 * @method
+		 * @param {number} value the new cosine similarity threshold value.
+		 */
+		onSimilarityThresholdChange = value => this.updateParam("similarityThreshold", value)
+
+		/**
+		 * Renders parameters that are exclusive for scoring matching LUs through
+		 * vectors.
+		 * 
+		 * @public 
+		 * @method
+		 * @returns {JSX} 
+		 */
+		renderVectorFields() {
+			const {uiState} = this.props;
+
+			if (uiState.scoring && uiState.scoring.type === 'lu_muse') {
+				const {params} = uiState.scoring;
+
+				return (
+					<div className="sidebar-row">
+						<NumericInput
+							min={1}
+							step={1}
+							value={params.neighborhoodSize}
+							onChange={this.onNeighborhoodSizeChange}
+							label="Vector neighborhood size"
+						/>
+						<Slider
+							label="Cosine similarity threshold"
+							value={params.similarityThreshold}
+							onChange={this.onSimilarityThresholdChange}
+						/>
+					</div>
+				);
+			}
+		}
 		
 		render() {
 			const {store, uiState} = this.props;
 			const sidebarWidth = { width: uiState.isSidebarOpen ? '500px' : '60px' };
 			const contentDisplay = { display: uiState.isSidebarOpen ? 'block' : 'none' };
-			const params = uiState.scoring ? uiState.scoring.params : {}; 
+			const params = uiState.scoring ? uiState.scoring.params : {};
 		
 			return (
 				<div className="sidebar-container" style={sidebarWidth} >
@@ -132,49 +185,45 @@ const Sidebar = observer(
 						</div>
 					</div>
 					<div style={contentDisplay} >
-						<h3 className="sidebar-field-label first">Alignment file</h3>
+						<FormLabel style={{ marginTop: 0 }}>Alignment file</FormLabel>
 						<JsonFileInput onFileChange={this.onFileChange} />
 						<div className="sidebar-row">
 							<div>
-								<h3 className="sidebar-field-label">Scoring tecnique</h3>
+								<FormLabel>Scoring technique</FormLabel>
 								<Select
 									options={uiState.scoringSelectOptions}
 									onChange={this.onScoringChange}
 								/>
 							</div>
-							<div>
-								<h3 className="sidebar-field-label">Threshold</h3>
-								<Slider
-									value={params.threshold}
-									onChange={this.onThresholdChange}
-								/>
-							</div>
+							<Slider
+								value={params.threshold}
+								onChange={this.onThresholdChange}
+								label="Score threshold"
+							/>
 						</div>
+						{this.renderVectorFields()}
 						<div className="sidebar-row">
-							<div>
-								<CheckBoxEnabledInput
-									checked={params.limitSankeyEdges}
-									value={params.sankeyMaxEdges}
-									onCheckedChange={this.onLimitSankeyEdgesChange}
-									onValueChange={this.onSankeyEdgesMaxChange}
-									min={1}
-									label="Restrict number of connections of each frame:"
-									placeholder="Max # of edges for frame"
-								/>
-							</div>
-							<div>
-								<CheckBox
-									checked={params.displayOnlyFrameSet}
-									onChange={this.onDisplayOnlyFrameSetChange}
-									label="Show ONLY selected frames"
-								/>
-							</div>
+							<CheckBoxEnabledInput
+								checked={params.limitSankeyEdges}
+								value={params.sankeyMaxEdges}
+								onCheckedChange={this.onLimitSankeyEdgesChange}
+								onValueChange={this.onSankeyEdgesMaxChange}
+								min={1}
+								label="Restrict number of connections of each frame:"
+								placeholder="Max # of edges for frame"
+							/>
+							<CheckBox
+								checked={params.displayOnlyFrameSet}
+								onChange={this.onDisplayOnlyFrameSetChange}
+								label="Show ONLY selected frames"
+							/>
 						</div>
-						<h3 className="sidebar-field-label">Frame selection</h3>
+						<FormLabel>Frame selection</FormLabel>
 						<MultiSelect
 							items={store.frameOptions}	
 							selectedItems={uiState.sankeyFrames}
 							onChange={this.onFrameSelectionChange}
+							responsiveHeight="350px"
 							itemHeight={30}
 							wrapperClassName="multi-select-wrapper"
 						/>

@@ -19,14 +19,6 @@
 	cursor: pointer;
 }
 
-h3.sidebar-field-label {
-	margin: 18px 0 4px;
-	font-size: 14px;
-}
-h3.sidebar-field-label.first{
-	margin: 0 0 4px;
-}
-
 div.sidebar-row {
 	display: flex;
 	flex-direction: row;

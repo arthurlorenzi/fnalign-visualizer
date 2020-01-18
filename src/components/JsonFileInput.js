@@ -60,6 +60,7 @@ class JsonFileInput extends React.Component {
 	 * Renders an error message.
 	 * 
 	 * @public
+	 * @method
 	 * @returns {JSX}
 	 */
 	renderError() {

@@ -36,6 +36,8 @@ const DEFAULT_PARAMS = {
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: 5,
 		limitSankeyEdges: true,
+		neighborhoodSize: 5,
+		similarityThreshold: 0.3,
 	},
 	lu_mean_muse: {
 		threshold: 0.85,
@@ -104,6 +106,8 @@ class AlignmentStore {
 	 */
 	wordsByVectorId = []
 
+	frameVectorCache = {}
+
 	constructor(uiState) {
 		this.uiState = uiState;
 	}
@@ -126,7 +130,8 @@ class AlignmentStore {
 			const filterFn = params.displayOnlyFrameSet
 				? x => frameSet.has(x[0]) && frameSet.has(x[1]) && x[2] >= params.threshold
 				: x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= params.threshold;
-			const filtered = this.edges[scoring.id].filter(filterFn);
+			const edges = scoring.id === 'lu_muse_5_0.3' ? this.computeEdges(frameSet) : this.edges[scoring.id];
+			const filtered = edges.filter(filterFn);
 
 			return this.pruneEdges(filtered)
 				.map(x => [
@@ -137,6 +142,17 @@ class AlignmentStore {
 		} else {
 			return [];
 		}
+	}
+
+	/**
+	 * Returns indices of lexical frames derived from this.indices.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Array[Array[string]]} 2-dimension array of index ids.
+	 */
+	get lexicalIndices() {
+		return this.indices.map(i => i.filter(f => this.frames[f].LUs.length > 0));
 	}
 
 	/**
@@ -156,7 +172,7 @@ class AlignmentStore {
 				label: this.frames[x].name + '.' + this.frames[x].language,
 				disabled: this.frames[x].LUs.length === 0,
 			}))
-			.sort((a , b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
+			.sort((a, b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
 	}
 
 	/**
@@ -188,6 +204,92 @@ class AlignmentStore {
 			default:
 				return { nodes: [], links: [] };
 		}
+	}
+
+	/**
+	 * Computes Sankey diagram edges of the given frame set. Each frame in this
+	 * set will have its alignment score with all frames in the other language
+	 * computed.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Set} frameSet set of frames that edges will be computed.
+	 */
+	computeEdges(frameSet) {
+		const edges = [];
+		/**
+		 * Indices are filtered to prevent duplicate edges when "frameSet" has
+		 * english and L2 frames. For example, if "A" is an english frame and "B"
+		 * is a L2 frame, "A" would first be scored against all L2 frames
+		 * (including "B"). Later, "B" would be scored against all english frames;
+		 * the alignment of the pair ("A", "B") would end up being calculated
+		 * again. Of course, we could always check if the other frame is in the
+		 * frame set before calculating the pair score, but filtering the indices
+		 * yields the same results with less checks.
+		 */
+		const indices = [
+			this.indices[0].filter(x => !frameSet.has(x)),
+			this.indices[1],
+		];
+	
+	
+		for (let frameId of frameSet) {
+			const frame = this.frames[frameId];
+	
+			if (frame.LUs.length === 0) {
+				continue;
+			} 
+	
+			if (frame.language === 'en') {
+				edges.push(
+					...indices[1].map(i => [frame.gid, i, this.LUVectorMatchingScore(frame, this.frames[i])])
+				);
+			} else {
+				edges.push(
+					...indices[0].map(i => [i, frame.gid, this.LUVectorMatchingScore(this.frames[i], frame)])
+				);
+			}
+		}
+		this.frameVectorCache = {};
+		return edges.filter(x => x[2] > 0);
+	}
+
+	/**
+	 * Computes the alignment score between the given frames using multilingual
+	 * space vectors to match LUs.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Object} bfnFrame the english frame data object.
+	 * @param {Object} l2Frame the L2 frame data object.
+	 */
+	LUVectorMatchingScore(bfnFrame, l2Frame) {
+		const {params} = this.uiState.scoring;
+
+		if (!this.frameVectorCache[bfnFrame.gid]) {
+			this.frameVectorCache[bfnFrame.gid] = 
+				bfnFrame.LUs
+					.map(x => this.vectorIdsByLU[x])
+					.filter(x => x)
+					.map(x => x.slice(0, params.neighborhoodSize))
+					.flat()
+					.filter(x => x[0] >= params.similarityThreshold);
+		}
+
+		if (!this.frameVectorCache[l2Frame.gid]) {
+			this.frameVectorCache[l2Frame.gid] = new Set(
+				l2Frame.LUs
+					.map(x => this.vectorIdsByLU[x])
+					.flat()
+					.filter(x => x)
+					.map(x => x[1])
+			);
+		}
+	
+		const matches = this.frameVectorCache[bfnFrame.gid]
+				.filter(x => x && this.frameVectorCache[l2Frame.gid].has(x[1]));
+		
+		return matches.length / bfnFrame.LUs.length;
 	}
 
 	/**
@@ -332,8 +434,8 @@ class AlignmentStore {
 		const links = LUNodes
 			.map(s =>
 				(relationMap[s.name] || [])
-					.slice(0, params.K)
-					.filter(t => !Array.isArray(t) || t[0] > params.threshold)
+					.slice(0, params.neighborhoodSize)
+					.filter(t => !Array.isArray(t) || t[0] > params.similarityThreshold)
 					.map(t => ({
 						source: s,
 						target: Array.isArray(t) ? t[1] : t,
@@ -474,6 +576,7 @@ decorate(AlignmentStore, {
 	synsetData: observable,
 	vectorIdsByLU: observable,
 	wordsByVectorId: observable,
+	lexicalIndices: computed,
 	sankeyData: computed,
 	frameOptions: computed,
 });

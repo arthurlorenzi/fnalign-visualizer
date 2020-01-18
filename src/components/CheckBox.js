@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 import './CheckBox.css';
 
+import FormLabel from './FormLabel';
+
 /**
  * 
  * A checkbox component with label and state change event support.
@@ -32,7 +34,7 @@ export default class CheckBox extends React.Component {
 		return (
 			<div className="checkbox-wrapper">
 				<input type="checkbox" checked={checked || false} onChange={e => onChange(e.target.checked)} />
-				<span>{label}</span>
+				<FormLabel style={{ marginLeft: 6 }}>{label}</FormLabel>
 			</div>
 		);
 	}

@@ -4,6 +4,8 @@ import { observer } from 'mobx-react';
 
 import './Slider.css';
 
+import FormLabel from './FormLabel';
+
 /**
  * 
  * A slider component that also allows textual input in [0,1] interval.
@@ -25,26 +27,29 @@ const Slider = observer(
 		}
 
 		render(){
-			const {value, onChange} = this.props;
+			const {value, onChange, label} = this.props;
 
 			return (
 				<div className="slider-container">
-					<input
-						type="range"
-						min={0}
-						max={1}
-						step={0.001}
-						value={value || ""}
-						onChange={e => onChange(e.target.value)}
-						className="slider" />
-					<input
-						type="number"
-						min={0}
-						max={1}
-						step="any"
-						value={value || ""}
-						onChange={e => onChange(e.target.value)}
-						className="slider-text" />
+					<FormLabel>{label}</FormLabel>
+					<div className="slider-input-container">
+						<input
+							type="range"
+							min={0}
+							max={1}
+							step={0.001}
+							value={value || ""}
+							onChange={e => onChange(e.target.value)}
+							className="slider" />
+						<input
+							type="number"
+							min={0}
+							max={1}
+							step="any"
+							value={value || ""}
+							onChange={e => onChange(e.target.value)}
+							className="slider-text" />
+					</div>
 				</div>
 			);
 		}
