@@ -4,35 +4,30 @@ import { action, computed, decorate, observable } from 'mobx';
 const DEFAULT_PARAMS = {
 	attr_matching: {
 		threshold: 0,
-		sankeyFrameSet: [],
 		displayOnlyFrameSet: true,
 		sankeyMaxEdges: null,
 		limitSankeyEdges: false,
 	},
 	lu_wordnet: {
 		threshold: 0.4,
-		sankeyFrameSet: [],
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: null,
 		limitSankeyEdges: false,
 	},
 	synset: {
 		threshold: 0.1,
-		sankeyFrameSet: [],
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: null,
 		limitSankeyEdges: false,
 	},
 	synset_inv: {
 		threshold: 0.1,
-		sankeyFrameSet: [],
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: null,
 		limitSankeyEdges: false,
 	},
 	lu_muse: {
 		threshold: 0.75,
-		sankeyFrameSet: [],
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: 5,
 		limitSankeyEdges: true,
@@ -41,12 +36,24 @@ const DEFAULT_PARAMS = {
 	},
 	lu_mean_muse: {
 		threshold: 0.85,
-		sankeyFrameSet: [],
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: 5,
 		limitSankeyEdges: true,
 	}
 };
+
+/**
+ * Check if two sets are equal in the sense that they have a matching set of
+ * values.
+ *
+ * @param {Set} a 
+ * @param {Set} b
+ * @returns {Boolean} 
+ */
+const areSetsEqual = (a, b) => (
+	(a.size === b.size) ? 
+	[...a].every( value => b.has(value) ) : false
+);
 
 /**
  * MobX store for alignment data of a specific FrameNet database against
@@ -106,7 +113,16 @@ class AlignmentStore {
 	 */
 	wordsByVectorId = []
 
+	/**
+	 * Dictionary used for caching the vectors of frames.
+	 */
 	frameVectorCache = {}
+
+	/**
+	 * Object used to store the values of the parameters used in the most recent
+	 * visualization.
+	 */
+	previousParams = {}
 
 	constructor(uiState) {
 		this.uiState = uiState;
@@ -130,7 +146,7 @@ class AlignmentStore {
 			const filterFn = params.displayOnlyFrameSet
 				? x => frameSet.has(x[0]) && frameSet.has(x[1]) && x[2] >= params.threshold
 				: x => (frameSet.has(x[0]) || frameSet.has(x[1])) && x[2] >= params.threshold;
-			const edges = scoring.id === 'lu_muse_5_0.3' ? this.computeEdges(frameSet) : this.edges[scoring.id];
+			const edges = this.getEdges(frameSet);
 			const filtered = edges.filter(filterFn);
 
 			return this.pruneEdges(filtered)
@@ -207,6 +223,53 @@ class AlignmentStore {
 	}
 
 	/**
+	 * Gets the edges of the Sankey diagram for the selected scoring method. This
+	 * function will recomputed edges if necessary, else it will return data from
+	 * this.edges.
+	 * 
+	 * @public
+	 * @method
+	 * @param {Set} frameSet set of frames of interest.
+	 * @returns {Array[Array]} edges of the sankey diagram in the format
+	 * 	[source id, target id, score value].
+	 */
+	getEdges(frameSet) {
+		const {scoring} = this.uiState;
+		const {params} = scoring;
+		const prevParams = this.previousParams[scoring.id] || {};
+		let edges;
+
+		if (scoring.type === 'lu_muse') {
+			let recompute = false;
+
+			for (let key of ['neighborhoodSize', 'similarityThreshold']) {
+				if (prevParams[key] !== params[key]) {
+					recompute = true;
+					break;
+				}
+			}
+
+			if (!recompute) {
+				recompute = !areSetsEqual(prevParams['frameSet'], frameSet);
+			}
+
+			if (recompute) {
+				edges = this.computeEdges(frameSet);
+				this.edges[scoring.id] = edges;
+			} else {
+				edges = this.edges[scoring.id];
+			}
+		} else {
+			edges = this.edges[scoring.id];
+		}
+
+		this.previousParams[scoring.id] = {...params};
+		this.previousParams[scoring.id]['frameSet'] = frameSet;
+
+		return edges;
+	}
+
+	/**
 	 * Computes Sankey diagram edges of the given frame set. Each frame in this
 	 * set will have its alignment score with all frames in the other language
 	 * computed.
@@ -214,6 +277,8 @@ class AlignmentStore {
 	 * @public
 	 * @method
 	 * @param {Set} frameSet set of frames that edges will be computed.
+	 * @returns {Array[Array]} edges of the sankey diagram in the format
+	 * 	[source id, target id, score value].
 	 */
 	computeEdges(frameSet) {
 		const edges = [];
@@ -271,16 +336,14 @@ class AlignmentStore {
 				bfnFrame.LUs
 					.map(x => this.vectorIdsByLU[x])
 					.filter(x => x)
-					.map(x => x.slice(0, params.neighborhoodSize))
-					.flat()
+					.flatMap(x => x.slice(0, params.neighborhoodSize))
 					.filter(x => x[0] >= params.similarityThreshold);
 		}
 
 		if (!this.frameVectorCache[l2Frame.gid]) {
 			this.frameVectorCache[l2Frame.gid] = new Set(
 				l2Frame.LUs
-					.map(x => this.vectorIdsByLU[x])
-					.flat()
+					.flatMap(x => this.vectorIdsByLU[x])
 					.filter(x => x)
 					.map(x => x[1])
 			);
@@ -432,7 +495,7 @@ class AlignmentStore {
 		const {params} = this.uiState.scoring;
 
 		const links = LUNodes
-			.map(s =>
+			.flatMap(s =>
 				(relationMap[s.name] || [])
 					.slice(0, params.neighborhoodSize)
 					.filter(t => !Array.isArray(t) || t[0] > params.similarityThreshold)
@@ -441,7 +504,6 @@ class AlignmentStore {
 						target: Array.isArray(t) ? t[1] : t,
 					}))
 			)
-			.flat();
 		// Creating node objects for intermediate Nodes
 		const intermediateMap = {}
 		const nodes = [...new Set(links.map(l => l.target))]
