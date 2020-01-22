@@ -239,7 +239,7 @@ class AlignmentStore {
 		const prevParams = this.previousParams[scoring.id] || {};
 		let edges;
 
-		if (scoring.type === 'lu_muse') {
+		if (scoring.type === 'lu_muse' || !this.edges[scoring.id]) {
 			let recompute = false;
 
 			for (let key of ['neighborhoodSize', 'similarityThreshold']) {
@@ -589,13 +589,16 @@ class AlignmentStore {
 		this.edges = {}
 		data.alignments.forEach(x => {
 			const edges = [];
-			x.data.forEach((row, i) => {
-				row.forEach((value, j) => {
-					if (value > 0)
-						edges.push([data.indices[0][i], data.indices[1][j], value])
+
+			if (x.data) {
+				x.data.forEach((row, i) => {
+					row.forEach((value, j) => {
+						if (value > 0)
+							edges.push([data.indices[0][i], data.indices[1][j], value])
+					});
 				});
-			});
-			this.edges[x.id] = edges;
+				this.edges[x.id] = edges;
+			}
 		});
 
 		this.framesByName = {};
