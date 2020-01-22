@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "923ca7aa3317fb5525fcd0a0cfc0e337",
+    "revision": "7d2f01333bb1f83cb4829733e0bf7bde",
     "url": "/mlfn-alignment-visualizer/index.html"
   },
   {
@@ -8,7 +8,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/mlfn-alignment-visualizer/static/css/2.b31b2e03.chunk.css"
   },
   {
-    "revision": "a31346e35b7254d60cbb",
+    "revision": "db9e4f505edbc2962968",
     "url": "/mlfn-alignment-visualizer/static/css/main.9255c6db.chunk.css"
   },
   {
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/mlfn-alignment-visualizer/static/js/2.175d6357.chunk.js.LICENSE"
   },
   {
-    "revision": "a31346e35b7254d60cbb",
-    "url": "/mlfn-alignment-visualizer/static/js/main.e0257b76.chunk.js"
+    "revision": "db9e4f505edbc2962968",
+    "url": "/mlfn-alignment-visualizer/static/js/main.0eb09ea6.chunk.js"
   },
   {
     "revision": "e519bf3c9ee4ff78c6ab",
