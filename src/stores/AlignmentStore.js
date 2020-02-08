@@ -1,6 +1,6 @@
 import { action, computed, decorate, observable } from 'mobx';
 
-// Default params of each scoring type
+// Default params of some scoring types
 const DEFAULT_PARAMS = {
 	attr_matching: {
 		threshold: 0,
@@ -10,18 +10,6 @@ const DEFAULT_PARAMS = {
 	},
 	lu_wordnet: {
 		threshold: 0.4,
-		displayOnlyFrameSet: false,
-		sankeyMaxEdges: null,
-		limitSankeyEdges: false,
-	},
-	synset: {
-		threshold: 0.1,
-		displayOnlyFrameSet: false,
-		sankeyMaxEdges: null,
-		limitSankeyEdges: false,
-	},
-	synset_inv: {
-		threshold: 0.1,
 		displayOnlyFrameSet: false,
 		sankeyMaxEdges: null,
 		limitSankeyEdges: false,
@@ -614,7 +602,12 @@ class AlignmentStore {
 				id: x.id,
 				desc: x.desc,
 				type: x.type,
-				params: DEFAULT_PARAMS[x.type]
+				params: DEFAULT_PARAMS[x.type] || {
+					threshold: 0.1,
+					displayOnlyFrameSet: false,
+					sankeyMaxEdges: null,
+					limitSankeyEdges: false,
+				}
 			}));
 
 		this.indices = data.indices;
