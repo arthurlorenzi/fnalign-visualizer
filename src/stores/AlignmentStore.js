@@ -205,6 +205,8 @@ class AlignmentStore {
 				return this.synsetGraph();
 			case 'lu_muse':
 				return this.LUMuseGraph();
+			case 'fe_matching':
+				return this.FEMatchingGraph();
 			default:
 				return { nodes: [], links: [] };
 		}
@@ -352,19 +354,19 @@ class AlignmentStore {
 	 * @returns {Object} Graph definition with a node list and a link list.
 	 */
 	LUWordNetGraph() {
-		const nodes = this.getLUNodes();
+		const nodes = this.getNodes();
 		const inter = this.getConnectionObjects(nodes, this.synsetsByLU);
-		const links = inter.links.filter(l => l.target.frm1LU);
+		const links = inter.links.filter(l => l.target.hasLeftSource);
 
-		nodes.push(...inter.nodes.filter(n => n.frm1LU));
-		links.filter(l => l.source.type === 'frm2LU').forEach(l => {
+		nodes.push(...inter.nodes.filter(n => n.hasLeftSource));
+		links.filter(l => l.source.type === 'right').forEach(l => {
 			let swap = l.source;
 			l.source = l.target;
 			l.target = swap;
 		})
-		nodes.forEach(n => n.isReferenceNode = n.type === 'frm1LU');
+		nodes.forEach(n => n.isReferenceNode = n.type === 'left');
 		links
-			.filter(l => (l.source.type === 'frm1LU' && l.target.isIntersection))
+			.filter(l => (l.source.type === 'left' && l.target.isIntersection))
 			.forEach(l => {
 				l.source.isMatchingNode = true;
 			});
@@ -385,12 +387,12 @@ class AlignmentStore {
 	 */
 	synsetGraph() {
 		const type = this.uiState.scoring.type;
-		const nodes = this.getLUNodes();
+		const nodes = this.getNodes();
 		const inter = this.getConnectionObjects(nodes, this.synsetsByLU);
 		const links = inter.links;
 
 		nodes.push(...inter.nodes);
-		const isReferenceFn = type === 'synset' ? n => n.frm1LU : n => n.frm2LU;
+		const isReferenceFn = type === 'synset' ? n => n.hasLeftSource : n => n.hasRightSource;
 		nodes.forEach(n => {
 			n.isReferenceNode = isReferenceFn(n);
 			n.isMatchingNode = n.isIntersection;
@@ -410,23 +412,53 @@ class AlignmentStore {
 	 * @returns {Object} Graph definition with a node list and a link list.
 	 */
 	LUMuseGraph() {
-		const nodes = this.getLUNodes();
+		const nodes = this.getNodes();
 		const inter = this.getConnectionObjects(nodes, this.vectorIdsByLU, x => this.wordsByVectorId[x]);
-		const links = inter.links.filter(l => l.target.frm1LU);
+		const links = inter.links.filter(l => l.target.hasLeftSource);
 
-		nodes.push(...inter.nodes.filter(n => n.frm1LU));
-		links.filter(l => l.source.type === 'frm2LU').forEach(l => {
+		nodes.push(...inter.nodes.filter(n => n.hasLeftSource));
+		links.filter(l => l.source.type === 'right').forEach(l => {
 			let swap = l.source;
 			l.source = l.target;
 			l.target = swap;
 		})
-		nodes.forEach(n => n.isReferenceNode = n.type === 'frm1LU');
+		nodes.forEach(n => n.isReferenceNode = n.type === 'left');
 		links
-			.filter(l => (l.source.type === 'frm1LU' && l.target.isIntersection))
-			.forEach(l => {
-				l.source.isMatchingNode = true;
-			});
+			.filter(l => (l.source.type === 'left' && l.target.isIntersection))
+			.forEach(l => l.source.isMatchingNode = true);
 		this.computeDegrees(links);
+
+		return { nodes, links };
+	}
+
+	/**
+	 * Returns the FE matching graph definition where a match between two FEs
+	 * happens when both have the same name.
+	 * 
+	 * @public
+	 * @method
+	 * @returns {Object} Graph definition with a node list and a link list.
+	 */
+	FEMatchingGraph() {
+		const nodes = this.getNodes("FEs", x => x.name);
+		const links = [];
+
+		nodes.forEach(x => x.isReferenceNode = true);
+		const left = nodes.filter(x => x.type === "left");
+		const right = nodes.filter(x => x.type === "right");
+
+		for (let a of left) {
+			for (let b of right) {
+				if (a.type !== b.type && a.name === b.name) {
+					links.push({ 
+						source: a,
+						target: b, 
+					})
+					a.isMatchingNode = true;
+					b.isMatchingNode = true;
+				}
+			}
+		}
 
 		return { nodes, links };
 	}
@@ -443,22 +475,32 @@ class AlignmentStore {
 	createNode = name => ({ name: name, inDegree: 0, outDegree: 0, });
 
 	/**
-	 * Returns the list of LU nodes of the selected frames identifying if they
-	 * are LUs from the first or the second frame.
+	 * Returns the list of nodes of the selected frames distinguishing the source
+	 * frame of the node between "left" and "right".
 	 * 
 	 * @public
 	 * @method
+	 * @param {string} frameAttr frame attribute that holds nodes base objects.
+	 * @param {Func} nodeNameFn name getter for a graph node.
 	 * @returns {Array} list of LU nodes.
 	 */
-	getLUNodes() {
+	getNodes(frameAttr = "LUs", nodeNameFn = x => x) {
 		const {selectedFrames} = this.uiState;
 
 		if (selectedFrames[0] && selectedFrames[1]) {
-			return this.frames[selectedFrames[0]].LUs
-				.map(x => ({ type: 'frm1LU', ...this.createNode(x) }))
+			return this.frames[selectedFrames[0]][frameAttr]
+				.map(x => ({
+					type: 'left',
+					...this.createNode(nodeNameFn(x)),
+					...(typeof x === "object" ? x : null),
+				}))
 				.concat(
-					this.frames[selectedFrames[1]].LUs
-					.map(x => ({ type: 'frm2LU', ...this.createNode(x) }))
+					this.frames[selectedFrames[1]][frameAttr]
+					.map(x => ({
+						type: 'right',
+						...this.createNode(nodeNameFn(x)),
+						...(typeof x === "object" ? x : null),
+					}))
 				);
 		} else {
 			return [];
@@ -475,11 +517,11 @@ class AlignmentStore {
 	 * @method
 	 * @param {Array} LUNodes list of LU nodes.
 	 * @param {Object} relationMap mapping of LUs to intermediate node ids.
-	 * @param {function} nameFn function to get the name of a node using id.
+	 * @param {function} nodeNameFn function to get the name of a node using id.
 	 * @returns {Object} A object containing the intermediate nodes of the graph
 	 * and their links to LU nodes.
 	 */
-	getConnectionObjects(LUNodes, relationMap, nameFn=x=>x) {
+	getConnectionObjects(LUNodes, relationMap, nodeNameFn=x=>x) {
 		const {params} = this.uiState.scoring;
 
 		const links = LUNodes
@@ -490,6 +532,7 @@ class AlignmentStore {
 					.map(t => ({
 						source: s,
 						target: Array.isArray(t) ? t[1] : t,
+						isDirected: true,
 					}))
 			)
 		// Creating node objects for intermediate Nodes
@@ -498,7 +541,7 @@ class AlignmentStore {
 				.map(t => {
 					const node = {
 						type: 'intermediate',
-						...this.createNode(nameFn(t))
+						...this.createNode(nodeNameFn(t))
 					};
 					intermediateMap[t] = node;
 					return node;
@@ -506,9 +549,9 @@ class AlignmentStore {
 		// Including references to objects in links
 		links.forEach(l => {
 			l.target = intermediateMap[l.target];
-			l.target[l.source.type] = true;
+			l.target[l.source.type === 'left' ? 'hasLeftSource' : 'hasRightSource'] = true;
 		});
-		nodes.forEach(n => n.isIntersection = n.frm1LU && n.frm2LU);
+		nodes.forEach(n => n.isIntersection = n.hasLeftSource && n.hasRightSource);
 
 		return { nodes, links };
 	}

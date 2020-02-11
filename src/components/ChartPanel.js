@@ -2,12 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {observer} from 'mobx-react';
 import {FaArrowLeft} from 'react-icons/fa';
-import Sankey from './Sankey';
-import SynsetGraph from './SynsetGraph';
-import LUMatchingGraph from './LUMatchingGraph';
 
 import './ChartPanel.css';
 
+import Sankey from './Sankey';
+import SynsetGraph from './SynsetGraph';
+import LUMatchingGraph from './LUMatchingGraph';
+import FEMatchingGraph from './FEMatchingGraph';
 import AlignmentStore from '../stores/AlignmentStore';
 import UiState from '../stores/UiState';
 
@@ -34,7 +35,8 @@ const ChartPanel = observer(
 				"lu_wordnet",
 				"synset",
 				"synset_inv",
-				"lu_muse"
+				"lu_muse",
+				"fe_matching",
 			]
 		}
 
@@ -65,6 +67,31 @@ const ChartPanel = observer(
 			}
 		}
 
+		/**
+		 * Renders the appropriate detail/matching graph for the selected frame
+		 * pair and scoring technique.
+		 * 
+		 * @public
+		 * @method
+		 * @returns {JSX}
+		 */
+		renderMatchingGraph() {
+			const {store, uiState} = this.props;
+
+			if (uiState.scoring) {
+				const framePair = uiState.selectedFrames.map(x => store.frames[x]);
+
+				switch(uiState.scoring.type) {
+					case 'lu_muse':
+						return <LUMatchingGraph store={store} framePair={framePair} />;
+					case 'fe_matching':
+						return <FEMatchingGraph store={store} framePair={framePair} />;
+					default:
+						return <SynsetGraph store={store} framePair={framePair} />;
+				}
+			}
+		}
+
 		render() {
 			const {store, uiState} = this.props;
 			let className = "";
@@ -87,11 +114,7 @@ const ChartPanel = observer(
 						store={store}
 						onEdgeClick={(s, t) => this.onEdgeClick(s, t)}
 					/>
-					{
-						uiState.scoring && uiState.scoring.type === 'lu_muse'
-							? <LUMatchingGraph store={store} framePair={uiState.selectedFrames} />
-							: <SynsetGraph store={store} framePair={uiState.selectedFrames} />
-					}
+					{this.renderMatchingGraph()}
 				</div>
 			)
 		}

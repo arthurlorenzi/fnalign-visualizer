@@ -9,13 +9,13 @@ import AlignmentStore from '../stores/AlignmentStore';
 /**
  * A component for lexical unit matching graphs.
  */
-const LUMatchingGraph = observer(
-	class LUMatchingGraph extends React.Component {
+const FEMatchingGraph = observer(
+	class FEMatchingGraph extends React.Component {
 		static propTypes = {
-		/**
-		 * The frame pair of the LUs used for rendering the graph.
-		 */
-		framePair: PropTypes.array,
+			/**
+			 * The frame pair of the FEs used for rendering the graph.
+			 */
+			framePair: PropTypes.array,
 			/**
 			 * A mobx store of frame alignments.
 			 */
@@ -49,45 +49,34 @@ const LUMatchingGraph = observer(
 			
 			const x =
 				scalePoint()
-					.domain(['left', 'intermediate', 'right'])
+					.domain(['left', 'right'])
 					.range([0, width])
 					.padding(.3)
 
-			const yLU1 = scalePoint()
+			const yLeft = scalePoint()
 				.domain(data.nodes
 					.filter(d => d.type === 'left')
 					.sort((a, b) => b.outDegree - a.outDegree)
 					.map(d => d.name))
-				.range([margin*2, height-(margin*2)]);
+				.range([margin*4, height-(margin*4)]);
 
-			const yLU2 = scalePoint()
+			const yRight = scalePoint()
 				.domain(data.nodes
 						.filter(d => d.type === 'right')
 						.sort((a,b) => b.outDegree - a.outDegree)
 						.map(d => d.name))
-				.range([margin*2, height-(margin*2)]);
+				.range([margin*4, height-(margin*4)]);
 
-			const yInter = scalePoint()
-				.domain(data.nodes
-					.filter(d => d.type === 'intermediate')
-					.sort((a, b) => b.inDegree - a.inDegree)
-					.map(d => d.name))
-				.range([margin, height-margin]);
-
-			const frm1LUX = x('left');
-			const frm2LUX = x('right');
-			const interX = x('intermediate');
+			const xLeft = x('left');
+			const xRight = x('right');
 
 			data.nodes.forEach(d => {
 				if (d.type === 'left') {
-					d.x = frm1LUX;
-					d.y = yLU1(d.name);
-				} else if (d.type === 'right') {
-					d.x = frm2LUX;
-					d.y = yLU2(d.name);
+					d.x = xLeft;
+					d.y = yLeft(d.name);
 				} else {
-					d.x = interX;
-					d.y = yInter(d.name);
+					d.x = xRight;
+					d.y = yRight(d.name);
 				}
 			})
 
@@ -108,4 +97,4 @@ const LUMatchingGraph = observer(
 	}
 );
 
-export default LUMatchingGraph;
+export default FEMatchingGraph;
