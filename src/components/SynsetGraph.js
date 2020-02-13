@@ -97,10 +97,14 @@ const SynsetGraph = observer(
 		}
 
 		render() {
-			const {store, framePair} = this.props;
+			const {store, uiState, framePair} = this.props;
 
 			return (
-				<div ref={node => this.root = node}>
+				<div
+					className="visualization-container"
+					style={{ minWidth: uiState.width }}
+					ref={node => this.root = node}
+				>
 					<div id="synset-graph-content">
 						<div id="synset-tooltip">
 							<div className="synset-lang-title large" id="synset-name"></div>
@@ -112,6 +116,7 @@ const SynsetGraph = observer(
 						</div>
 						<LUMatchingGraph
 							store={store}
+							uiState={uiState}
 							framePair={framePair}
 							onMouseOverNode={this.onMouseOverNode}
 							onMouseOutNode={this.onMouseOutNode}

@@ -7,7 +7,7 @@ import MatchingGraph from './MatchingGraph';
 import AlignmentStore from '../stores/AlignmentStore';
 
 /**
- * A component for lexical unit matching graphs.
+ * A component for frame element matching graphs.
  */
 const FEMatchingGraph = observer(
 	class FEMatchingGraph extends React.Component {
@@ -40,11 +40,11 @@ const FEMatchingGraph = observer(
 		 * @returns {Object} Graph definition with a node list and a link list.
 		 */
 		getRenderingData() {
-			const {store} = this.props;
+			const {store, uiState} = this.props;
 			const data = store.graphData;
 
-			const height = window.innerHeight-10;
-			const width = 960;
+			const height = uiState.height-10;
+			const width = Math.max(uiState.width, 400);
 			const margin = 60;
 			
 			const x =
@@ -86,13 +86,21 @@ const FEMatchingGraph = observer(
 			}
 		}
 
-		render = () =>
-			<MatchingGraph
-				data={this.getRenderingData()}
-				framePair={this.props.framePair}
-				onMouseOverNode={this.props.onMouseOutNode}
-				onMouseOutNode={this.props.onMouseOutNode}
-			/>
+		render() {
+			const {uiState} = this.props;
+
+			return (
+				<MatchingGraph
+					data={this.getRenderingData()}
+					framePair={this.props.framePair}
+					height={uiState.height}
+					width={uiState.width}
+					margin={60}
+					onMouseOverNode={this.props.onMouseOutNode}
+					onMouseOutNode={this.props.onMouseOutNode}
+				/>
+			);
+		}
 
 	}
 );

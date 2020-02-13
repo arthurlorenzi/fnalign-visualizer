@@ -83,11 +83,11 @@ const ChartPanel = observer(
 
 				switch(uiState.scoring.type) {
 					case 'lu_muse':
-						return <LUMatchingGraph store={store} framePair={framePair} />;
+						return <LUMatchingGraph store={store} uiState={uiState} framePair={framePair} />;
 					case 'fe_matching':
-						return <FEMatchingGraph store={store} framePair={framePair} />;
+						return <FEMatchingGraph store={store} uiState={uiState} framePair={framePair} />;
 					default:
-						return <SynsetGraph store={store} framePair={framePair} />;
+						return <SynsetGraph store={store} uiState={uiState} framePair={framePair} />;
 				}
 			}
 		}
@@ -98,12 +98,12 @@ const ChartPanel = observer(
 
 			// Determining the tranformation that must be done to show the correct chart.
 			className += uiState.isAlignmentDetailVisible ? "shift" : "no-shift";
-			if (!uiState.isSidebarOpen) className += " expanded";
 		
 			return (
 				<div
 					id="chart-panel-container"
-					className={className} >
+					className={className}
+				>
 					{
 						uiState.isAlignmentDetailVisible &&
 						<div id="back-button-container" onClick={() => this.onBackClick()} >
@@ -112,6 +112,7 @@ const ChartPanel = observer(
 					}
 					<Sankey
 						store={store}
+						uiState={uiState}
 						onEdgeClick={(s, t) => this.onEdgeClick(s, t)}
 					/>
 					{this.renderMatchingGraph()}

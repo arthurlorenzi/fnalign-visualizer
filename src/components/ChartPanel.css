@@ -13,25 +13,19 @@
 	z-index: 10;
 }
 
-#chart-panel-container > div:not(#back-button-container) {
-	min-width: calc(100vw - 550px);
+#chart-panel-container > .visualization-container {
 	display: flex;
 	justify-content: center;
 }
 
-#chart-panel-container.expanded > div:not(#back-button-container) {
-	min-width: calc(100vw - 60px);
-}
-
-.shift > div:not(#back-button-container),
-.no-shift > div:not(#back-button-container) {
+.shift > .visualization-container,
+.no-shift > .visualization-container {
 	transition: transform 400ms ease-in-out;
-	
 }
-.shift > div:not(#back-button-container) {
+.shift > .visualization-container {
 	transform: translateX(-100%);
 }
-.no-shift > div:not(#back-button-container) {
+.no-shift > .visualization-container {
 	transform: translateX(0%);
 }
 

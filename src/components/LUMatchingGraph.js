@@ -40,11 +40,11 @@ const LUMatchingGraph = observer(
 		 * @returns {Object} Graph definition with a node list and a link list.
 		 */
 		getRenderingData() {
-			const {store} = this.props;
+			const { store, uiState } = this.props;
 			const data = store.graphData;
 
-			const height = window.innerHeight-10;
-			const width = 960;
+			const height = uiState.height-10;
+			const width = Math.max(uiState.width, 400);
 			const margin = 60;
 			
 			const x =
@@ -97,14 +97,21 @@ const LUMatchingGraph = observer(
 			}
 		}
 
-		render = () =>
-			<MatchingGraph
-				data={this.getRenderingData()}
-				framePair={this.props.framePair}
-				onMouseOverNode={this.props.onMouseOutNode}
-				onMouseOutNode={this.props.onMouseOutNode}
-			/>
+		render() {
+			const {uiState} = this.props;
 
+			return (
+				<MatchingGraph
+					data={this.getRenderingData()}
+					framePair={this.props.framePair}
+					height={uiState.height}
+					width={uiState.width}
+					margin={60}
+					onMouseOverNode={this.props.onMouseOverNode}
+					onMouseOutNode={this.props.onMouseOutNode}
+				/>
+			);
+		}
 	}
 );
 

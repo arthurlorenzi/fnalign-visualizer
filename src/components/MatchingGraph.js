@@ -36,9 +36,6 @@ class MatchingGraph extends React.Component {
 		this.root = null;
 		this.links = null;
 		this.nodes = null;
-		this.height = null;
-		this.width = null;
-		this.margin = null;
 	}
 
 	/**
@@ -70,30 +67,34 @@ class MatchingGraph extends React.Component {
 	 * @returns {string} A string of path commands.
 	 */
 	computePath(datum) {
-		let coef;
+		let direction;
 		let x1 = datum.source.x;
 		let y1 = datum.source.y - (datum.source.height/4);
 		let x2 = datum.target.x;
 		let y2 = datum.target.y - (datum.target.height/4);
 
-		if (datum.source.type === 'left' || datum.source.type === 'intermediate') {
+		if (datum.source.type === 'left') {
 			x1 += datum.source.width + 12;
-			x2 -= 12;
-			coef = 1;
+			x2 -= datum.target.width/2 + 16;
+			direction = 1;
+		} else if (datum.source.type === 'intermediate') {
+			x1 += (datum.source.width/2) + 12;
+			x2 -= datum.target.width + 16;
+			direction = 1;
 		} else {
-			x1 -= 12;
-			x2 += datum.target.width + 16;
-			coef = -1;
+			x1 -= datum.source.width + 12;
+			x2 += (datum.target.width/2) + 18;
+			direction = -1;
 		}
 
 		const offset = 15;
-		const ccoef = (Math.abs(x1 - x2)-2*offset)/2.5;
+		const ccoef = (Math.abs(x1 - x2)-2*offset)/2.25;
 
 		return `
-			M ${x1}            ${y1}
-			L ${x1 + 3*coef}   ${y1}
-			C ${x1+ccoef*coef} ${y1}, ${x2-ccoef*coef} ${y2}, ${x2+offset*-coef} ${y2}
-			L ${x2}            ${y2}
+			M ${x1}                 ${y1}
+			L ${x1 + 3*direction}   ${y1}
+			C ${x1+ccoef*direction} ${y1}, ${x2-ccoef*direction} ${y2}, ${x2+offset*-direction} ${y2}
+			L ${x2}                 ${y2}
 		`;
 	}
 
@@ -106,7 +107,7 @@ class MatchingGraph extends React.Component {
 	 * @param {Object} data Graph data object as returned by getRenderingData.
 	 */
 	includeFooter(data) {
-		const {framePair} = this.props;
+		const { framePair, height, width, margin } = this.props;
 		const svg = select(this.root).select("svg");
 		const matching = data.nodes.filter(d => d.isMatchingNode).length;
 		const reference = data.nodes.filter(d => d.isReferenceNode && !d.isMatchingNode).length;
@@ -116,14 +117,14 @@ class MatchingGraph extends React.Component {
 			const left = framePair[1];
 
 			svg.select("#title")
-			.attr("x", this.margin)
-			.attr("y", this.height-this.margin/2)
+			.attr("x", margin)
+			.attr("y", height-margin/2)
 			.attr("class", "graph-info")
 			.text(`Frames: ${right.name} (${right.gid}), ${left.name} (${left.gid})`)
 
 			svg.select("#stats")
-				.attr("x", this.width)
-				.attr("y", this.height-this.margin/2)
+				.attr("x", width-margin)
+				.attr("y", height-margin/2)
 				.attr("class", "graph-info graph-score")
 				.html(`
 					Alignment score:
@@ -149,16 +150,12 @@ class MatchingGraph extends React.Component {
 	 * @method
 	 */
 	renderGraph() {
-		this.height = window.innerHeight-10;
-		this.width = 960;
-		this.margin = 60;
-
-		const data = this.props.data;
+		const { data, height, width } = this.props;
 		const svg = select(this.root).select("svg");
 
 		svg
-			.attr("height", this.height)
-			.attr("width", this.width);
+			.attr("height", height)
+			.attr("width", width);
 
 		this.nodes = svg.select("#nodes")
 			.selectAll("text")
@@ -172,6 +169,7 @@ class MatchingGraph extends React.Component {
 				})
 				.attr("x", d => d.x)
 				.attr("y", d => d.y)
+				.attr("text-anchor", d => d.type === 'left' ? 'start' : d.type === 'right' ? 'end' : 'middle')
 				.attr("class", d => {
 					let name = "node";
 					if (d.isMatchingNode) {
@@ -247,10 +245,14 @@ class MatchingGraph extends React.Component {
 	}
 
 	render() {
-		const {data} = this.props;
+		const {data, width} = this.props;
 
 		return (
-			<div ref={node => this.root = node}>
+			<div
+				className="visualization-container"
+				style={{ minWidth: width }}
+				ref={node => this.root = node}
+			>
 				{
 					data.nodes.length > 0
 					?

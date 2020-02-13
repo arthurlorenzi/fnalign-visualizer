@@ -9,6 +9,7 @@ import viz from '../layouts/viz.js';
 import './Sankey.css';
 
 import AlignmentStore from '../stores/AlignmentStore';
+import { getRenderedTextSize } from '../utils';
 
 // A 3-decimal precision formatter.
 const scoreFormatter = format(".3f");
@@ -72,6 +73,9 @@ const Sankey = observer(
 			this.bP = null;
 			// Reference to diagram root "g" svg element
 			this.bPg = null;
+			// Container dimensions for next render
+			this.height = null;
+			this.width = null;
 		}
 
 		/**
@@ -168,6 +172,48 @@ const Sankey = observer(
 		}
 
 		/**
+		 * Gets the width of the text boxes for the diagram frame labels. The size
+		 * is always defined based on the length of longest frame name.
+		 * 
+		 * @public
+		 * @method
+		 * @returns {number} width to be used for text boxes
+		 */
+		getLabelSize() {
+			const {store} = this.props;
+			let max = store.sankeyData[0];
+
+			for (let edge of store.sankeyData) {
+				if (edge[0].length > max.length) {
+					max = edge[0];
+				}
+				if (edge[1].length > max.length) {
+					max = edge[1];
+				}
+			}
+
+			return getRenderedTextSize(max, 14);
+		}
+
+		/**
+		 * Returns a mapping of each left side frame name to a color.
+		 * 
+		 * @public
+		 * @method
+		 * @returns {Object}
+		 */
+		getColorMap() {
+			const {store} = this.props;
+			const colorGen = colors();
+
+			return [...new Set(store.sankeyData.map(x => x[0]))]
+				.reduce((res, current) => {
+					res[current] = colorGen.next().value;
+					return res;
+				}, {});
+		}
+
+		/**
 		 * Renders the svg Sankey diagram using D3.js and sets up DOM events for its
 		 * elements. This rendering should be controlled by D3.js and not ReactJS.
 		 * This guarantees that the diagram will not be part of React's virtual
@@ -179,21 +225,20 @@ const Sankey = observer(
 		 */
 		renderSankey() {
 			const {store} = this.props;
-			const colorGen = colors();
-			const colorMap =
-				[...new Set(store.sankeyData.map(x => x[0]))]
-					.reduce((res, current) => {
-						res[current] = colorGen.next().value;
-						return res;
-					}, {});
-			const height = window.innerHeight-10;
-			const width = 960;
+			const labelSize = this.getLabelSize();
+			const colorMap = this.getColorMap();
 			const svg = select(this.svg);
 
 			svg.select("*").remove();
-			svg.attr("width", width).attr("height", height);
+			svg.attr("width", this.width).attr("height", this.height);
 
-			const g = svg.append("g").attr("transform","translate(200,50)");
+			// Sankey dimensions
+			const height = Math.max(this.height - 160, 400);
+			const vMargin = Math.max((this.height - height) / 2, 0);
+			const width = Math.min(600, Math.max(this.width - (2 * labelSize) - 160, 200));
+			const hMargin = Math.max((this.width - width) / 2, 0);
+
+			const g = svg.append("g").attr("transform", `translate(${hMargin}, ${vMargin})`);
 			
 			// Create layout for sankey (AKA bipartite graph)
 			this.bP =
@@ -201,8 +246,8 @@ const Sankey = observer(
 					.data(store.sankeyData)
 					.min(12)
 					.pad(1)
-					.height(height-200)
-					.width(500)
+					.height(height)
+					.width(width)
 					.fill(d => colorMap[d.primary])
 			
 			this.bPg = g.call(this.bP);
@@ -233,10 +278,13 @@ const Sankey = observer(
 		}
 
 		render() {
-			const data = this.props.store.sankeyData;
+			const {store, uiState} = this.props;
+			const data = store.sankeyData;
+			this.height = uiState.height;
+			this.width = uiState.width;
 
 			return (
-				<div>
+				<div className="visualization-container" style={{ minWidth: uiState.width }}>
 					{
 						data.length > 0
 						? <svg ref={node => this.svg = node}></svg>

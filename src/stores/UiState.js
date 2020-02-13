@@ -36,6 +36,10 @@ class UiState {
 	 */
 	selectedFrames = [null, null]
 
+	height = null
+
+	width = null
+
 	/**
 	 * Gets available scoring options.
 	 * 
@@ -80,6 +84,8 @@ decorate(UiState, {
 	scoringOptions: observable,
 	sankeyFrames: observable,
 	selectedFrames: observable,
+	height: observable,
+	width: observable,
 	scoringSelectOptions: computed,
 });
 
