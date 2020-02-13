@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/mlfn-alignment-visualizer/precache-manifest.ee74149b0cfe240b9cfbc708f97593de.js"
+  "/mlfn-alignment-visualizer/precache-manifest.c8de51b1bd06062d6c4a468b87d47a3d.js"
 );
 
 self.addEventListener('message', (event) => {
