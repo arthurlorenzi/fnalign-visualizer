@@ -30,6 +30,19 @@ const DEFAULT_PARAMS = {
 	}
 };
 
+const FE_SCORING_TYPES = new Set([
+	"fe_matching",
+	"muse_fe_matching",
+])
+
+const LU_SCORING_TYPES = new Set([
+	"lu_wordnet",
+	"synset",
+	"synset_inv",
+	"lu_muse",
+	"lu_mean_muse",
+])
+
 /**
  * Check if two sets are equal in the sense that they have a matching set of
  * values.
@@ -161,22 +174,36 @@ class AlignmentStore {
 
 	/**
 	 * Returns a sorted list of frames present in this alignment indicating if
-	 * they can be selected for visualization. Frames with no LUs cannot be
-	 * selected.
+	 * they can be selected for visualization. This method sets the "disabled"
+	 * attribute for all options based on the selected scoring technique. For
+	 * example: If the selected scoring depends on LUs but the Frame has none, it
+	 * will be disabled in the selection widget.
 	 * 
 	 * @public
 	 * @method
 	 * @returns {Array} english + L2 frames in "Select" components option format.
 	 */
 	get frameOptions() {
-		return this.indices
+		const {scoring} = this.uiState;
+		const options = this.indices
 			.flat()
 			.map(x => ({
 				id: x,
 				label: this.frames[x].name + '.' + this.frames[x].language,
-				disabled: this.frames[x].LUs.length === 0,
+				disabled: false,
 			}))
 			.sort((a, b) => (a.label < b.label) ? -1 : (a.label > b.label) ? 1 : 0);
+
+		if (!scoring)
+			return options.map(x => ({ ...x, disabled: true }));
+		
+		if (FE_SCORING_TYPES.has(scoring.type))
+			return options.map(x => ({ ...x, disabled: this.frames[x.id].FEs.length === 0 }))
+
+		if (LU_SCORING_TYPES.has(scoring.type))
+			return options.map(x => ({ ...x, disabled: this.frames[x.id].LUs.length === 0 }))
+
+		return options;
 	}
 
 	/**
