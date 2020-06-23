@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "e757f227d6c2917a6468a566211b937e",
+    "revision": "dc0eff4c1eaa569f0e6b368cdf47e33c",
     "url": "/framenet-multilingual-alignment/index.html"
   },
   {
@@ -8,7 +8,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/framenet-multilingual-alignment/static/css/2.b31b2e03.chunk.css"
   },
   {
-    "revision": "99ff899b96a3e094d939",
+    "revision": "2e13ff419a48a5b4a9c6",
     "url": "/framenet-multilingual-alignment/static/css/main.96c5245c.chunk.css"
   },
   {
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/framenet-multilingual-alignment/static/js/2.b02b9e61.chunk.js.LICENSE"
   },
   {
-    "revision": "99ff899b96a3e094d939",
-    "url": "/framenet-multilingual-alignment/static/js/main.8523ab4b.chunk.js"
+    "revision": "2e13ff419a48a5b4a9c6",
+    "url": "/framenet-multilingual-alignment/static/js/main.7e98585c.chunk.js"
   },
   {
     "revision": "15895c6a2fa8436860b7",
